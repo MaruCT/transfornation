@@ -184,6 +184,21 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
+  // Открываем проект по URL (?p=ID) после загрузки проектов
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const pid = params.get('p');
+      if (pid && projects.length > 0 && !selectedProject) {
+        const proj = projects.find(p => p.id === pid);
+        if (proj) {
+          setSelectedProject(proj);
+          setView(View.ProjectDetail);
+        }
+      }
+    } catch {}
+  }, [projects]);
+
 
    useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -197,6 +212,12 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleSelectProject = (project: Project) => {
+    // Обновляем URL для пермалинка ?p=ID
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('p', project.id);
+      window.history.pushState({ p: project.id }, '', url.toString());
+    } catch {}
     setSelectedProject(project);
     setView(View.ProjectDetail);
     window.scrollTo(0,0);
@@ -212,6 +233,12 @@ const AppContent: React.FC = () => {
     if (newView === View.Home || newView === View.Landing) {
         setSelectedProject(null);
         setSelectedEvent(null);
+        // Чистим параметр p из URL при выходе из карточки
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('p');
+          window.history.pushState({}, '', url.pathname + (url.search ? '?' + url.searchParams.toString() : ''));
+        } catch {}
     }
     if (newView === View.CreateProject && !currentUser) {
         alert("Please log in to create a project.");
