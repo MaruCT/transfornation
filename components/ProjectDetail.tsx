@@ -220,6 +220,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, 
                                         onLoadedData={() => setIsMediaLoading(false)}
                                         onError={() => setIsMediaLoading(false)}
                                     />
+                                )}
                             </motion.div>
                         </AnimatePresence>
 
