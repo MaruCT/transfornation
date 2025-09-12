@@ -188,9 +188,10 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
+      const slug = params.get('s');
       const pid = params.get('p');
-      if (pid && projects.length > 0 && !selectedProject) {
-        const proj = projects.find(p => p.id === pid);
+      if ((slug || pid) && projects.length > 0 && !selectedProject) {
+        const proj = slug ? projects.find(p => p.slug === slug) : projects.find(p => p.id === pid!);
         if (proj) {
           setSelectedProject(proj);
           setView(View.ProjectDetail);
@@ -200,7 +201,7 @@ const AppContent: React.FC = () => {
   }, [projects]);
 
 
-   useEffect(() => {
+  useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
@@ -212,10 +213,16 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleSelectProject = (project: Project) => {
-    // Обновляем URL для пермалинка ?p=ID
+    // Обновляем URL для пермалинка ?p=ID или ?s=slug
     try {
       const url = new URL(window.location.href);
-      url.searchParams.set('p', project.id);
+      if (project.slug) {
+        url.searchParams.delete('p');
+        url.searchParams.set('s', project.slug);
+      } else {
+        url.searchParams.delete('s');
+        url.searchParams.set('p', project.id);
+      }
       window.history.pushState({ p: project.id }, '', url.toString());
     } catch {}
     setSelectedProject(project);
@@ -233,10 +240,11 @@ const AppContent: React.FC = () => {
     if (newView === View.Home || newView === View.Landing) {
         setSelectedProject(null);
         setSelectedEvent(null);
-        // Чистим параметр p из URL при выходе из карточки
+        // Чистим параметры из URL при выходе из карточки
         try {
           const url = new URL(window.location.href);
           url.searchParams.delete('p');
+          url.searchParams.delete('s');
           window.history.pushState({}, '', url.pathname + (url.search ? '?' + url.searchParams.toString() : ''));
         } catch {}
     }

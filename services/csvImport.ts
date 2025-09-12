@@ -234,6 +234,7 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
 
     const project: Project = {
       id: get('id') || crypto.randomUUID(),
+      slug: sanitize(getAny(['slug', 'permalink'], cols)) || undefined,
       creatorId: get('creator') || 'unknown',
       title: sanitize(get('title')) || 'Untitled',
       creator: sanitize(get('creator')) || 'Unknown',

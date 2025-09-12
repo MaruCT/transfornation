@@ -65,6 +65,7 @@ export interface SocialLink {
 
 export interface Project {
   id: string;
+  slug?: string;
   creatorId: string;
   title: string;
   creator: string;
