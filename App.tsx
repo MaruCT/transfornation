@@ -153,6 +153,7 @@ const AppContent: React.FC = () => {
   const prevLanguageRef = useRef(language);
   const selectedProjectRef = useRef<Project | null>(null);
   const [translationUpdateKey, setTranslationUpdateKey] = useState(0); // Force re-render after translation
+  const [isContentReady, setIsContentReady] = useState(false); // Block content until translation is ready
 
 
   const categories = useMemo(() => Array.from(new Set(projects.map(p => p.category))), [projects]);
@@ -168,7 +169,7 @@ const AppContent: React.FC = () => {
     if (!translatedContent) {
       return project;
     }
-
+    
     return {
       ...project,
       title: translatedContent.title,
@@ -185,59 +186,55 @@ const AppContent: React.FC = () => {
     };
   }, [getTranslatedContent, language]);
 
-  // Prepare project content for display
+  // Prepare project content for display - BLOCKING VERSION
   const prepareProjectContent = useCallback(async (project: Project): Promise<Project> => {
+    setIsContentReady(false);
+    
     // If Russian, return original content immediately
     if (language === 'ru') {
+      setIsContentReady(true);
       return project;
     }
     
     // Check if translation exists in cache
     const cachedTranslation = getTranslatedContent(project, language);
     if (cachedTranslation) {
+      setIsContentReady(true);
       return getTranslatedProject(project);
     }
     
-    // Start translation in background
-    translateProjectContent(project, language).then((translation) => {
+    // Wait for translation to complete
+    try {
+      const translation = await translateProjectContent(project, language);
       if (translation) {
         const updatedProject = getTranslatedProject(project);
-        setSelectedProject(updatedProject);
-        setTranslationUpdateKey(prev => prev + 1);
+        setIsContentReady(true);
+        return updatedProject;
+      } else {
+        // Fallback to original if translation fails
+        setIsContentReady(true);
+        return project;
       }
-    });
-    
-    // Return original content immediately
-    return project;
+    } catch (error) {
+      console.error('Translation failed:', error);
+      // Fallback to original if translation fails
+      setIsContentReady(true);
+      return project;
+    }
   }, [language, getTranslatedContent, translateProjectContent, getTranslatedProject]);
 
   // Auto-translate project when language changes
   useEffect(() => {
     const currentProject = selectedProjectRef.current;
     if (currentProject && language !== prevLanguageRef.current) {
-      // Get translated version immediately
-      const translatedProject = getTranslatedProject(currentProject);
-      setSelectedProject(translatedProject);
-      setTranslationUpdateKey(prev => prev + 1);
-      
-      // If no cached translation exists and language is not Russian, start translation
-      if (language !== 'ru' && !getTranslatedContent(currentProject, language)) {
-        // Use a timeout to avoid blocking the UI
-        setTimeout(() => {
-          translateProjectContent(currentProject, language).then((translation) => {
-            if (translation) {
-              const updatedProject = getTranslatedProject(currentProject);
-              setSelectedProject(updatedProject);
-              setTranslationUpdateKey(prev => prev + 1);
-            }
-          }).catch((error) => {
-            console.error('Translation failed:', error);
-          });
-        }, 100);
-      }
+      // Use the blocking prepareProjectContent function
+      prepareProjectContent(currentProject).then((translatedProject) => {
+        setSelectedProject(translatedProject);
+        setTranslationUpdateKey(prev => prev + 1);
+      });
     }
     prevLanguageRef.current = language;
-  }, [language, getTranslatedProject, getTranslatedContent, translateProjectContent]);
+  }, [language, prepareProjectContent]);
 
 
   const fetchInitialData = useCallback(async () => {
@@ -274,30 +271,29 @@ const AppContent: React.FC = () => {
 
   // Открываем проект по URL (?p=ID) после загрузки проектов
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const slug = params.get('s');
-      const pid = params.get('p');
-      if ((slug || pid) && projects.length > 0 && !selectedProject) {
-        const proj = slug ? projects.find(p => p.slug === slug) : projects.find(p => p.id === pid!);
-        if (proj) {
-          setSelectedProject(proj);
-          setView(View.ProjectDetail);
-          
-          // If language is not Russian and no cached translation exists, start translation
-          if (language !== 'ru' && !getTranslatedContent(proj, language)) {
-            translateProjectContent(proj, language).then((translation) => {
-              if (translation) {
-                const updatedProject = getTranslatedProject(proj);
-                setSelectedProject(updatedProject);
-                setTranslationUpdateKey(prev => prev + 1);
-              }
-            });
+    const loadProjectFromURL = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const slug = params.get('s');
+        const pid = params.get('p');
+        if ((slug || pid) && projects.length > 0 && !selectedProject) {
+          const proj = slug ? projects.find(p => p.slug === slug) : projects.find(p => p.id === pid!);
+          if (proj) {
+            setView(View.ProjectDetail);
+            
+            // Use blocking translation
+            const translatedProject = await prepareProjectContent(proj);
+            setSelectedProject(translatedProject);
+            setTranslationUpdateKey(prev => prev + 1);
           }
         }
+      } catch (error) {
+        console.error('Error loading project from URL:', error);
       }
-    } catch {}
-  }, [projects, language, getTranslatedContent, translateProjectContent, getTranslatedProject]);
+    };
+    
+    loadProjectFromURL();
+  }, [projects, language, prepareProjectContent]);
 
 
   useEffect(() => {
@@ -311,7 +307,7 @@ const AppContent: React.FC = () => {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const handleSelectProject = (project: Project) => {
+  const handleSelectProject = async (project: Project) => {
     // Обновляем URL для пермалинка ?p=ID или ?s=slug
     try {
       const url = new URL(window.location.href);
@@ -325,21 +321,14 @@ const AppContent: React.FC = () => {
       window.history.pushState({ p: project.id }, '', url.toString());
     } catch {}
     
-    // Set the original project first
-    setSelectedProject(project);
+    // Set view first
     setView(View.ProjectDetail);
     window.scrollTo(0,0);
     
-    // If language is not Russian and no cached translation exists, start translation
-    if (language !== 'ru' && !getTranslatedContent(project, language)) {
-      translateProjectContent(project, language).then((translation) => {
-        if (translation) {
-          const updatedProject = getTranslatedProject(project);
-          setSelectedProject(updatedProject);
-          setTranslationUpdateKey(prev => prev + 1);
-        }
-      });
-    }
+    // Prepare content with blocking translation
+    const translatedProject = await prepareProjectContent(project);
+    setSelectedProject(translatedProject);
+    setTranslationUpdateKey(prev => prev + 1);
   };
   
   const handleSelectEvent = (event: Event) => {
@@ -353,6 +342,7 @@ const AppContent: React.FC = () => {
         setSelectedProject(null);
         setSelectedEvent(null);
         setTranslationUpdateKey(0); // Reset translation key
+        setIsContentReady(false); // Reset content ready state
         // Чистим параметры из URL при выходе из карточки
         try {
           const url = new URL(window.location.href);
@@ -594,15 +584,30 @@ const AppContent: React.FC = () => {
 
     switch (view) {
       case View.ProjectDetail:
-        return selectedProject && <ProjectDetail 
-                                    key={`${selectedProject.id}-${translationUpdateKey}`}
-                                    project={selectedProject} 
-                                    onBack={() => handleSetView(View.Home)} 
-                                    onFund={handleFundProject} 
-                                    currentUser={currentUser}
-                                    isTranslating={isTranslating(selectedProject.id)}
-                                    onToggleFavorite={handleToggleFavorite}
-                                  />;
+        if (!selectedProject) return null;
+        
+        // Show loading screen until content is ready
+        if (!isContentReady) {
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <h2 className="text-2xl font-bold text-white mb-2">Preparing content...</h2>
+                <p className="text-gray-300">Translating project content to {language === 'en' ? 'English' : language === 'zh' ? 'Chinese' : 'Russian'}</p>
+              </div>
+            </div>
+          );
+        }
+        
+        return <ProjectDetail 
+                  key={`${selectedProject.id}-${translationUpdateKey}`}
+                  project={selectedProject} 
+                  onBack={() => handleSetView(View.Home)} 
+                  onFund={handleFundProject} 
+                  currentUser={currentUser}
+                  isTranslating={isTranslating(selectedProject.id)}
+                  onToggleFavorite={handleToggleFavorite}
+                />;
       case View.EventDetail:
         return selectedEvent && <EventDetail 
                                   event={selectedEvent}
