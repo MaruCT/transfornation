@@ -10,6 +10,7 @@ interface ProjectDetailProps {
   onFund: (projectId: string, amount: number, reward: Reward) => void;
   currentUser: User | null;
   onToggleFavorite: (projectId: string) => void;
+  isTranslating?: boolean;
 }
 
 const socialIcons: { [key in SocialLink['platform']]: React.ReactNode } = {
@@ -95,7 +96,7 @@ const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(amount);
 };
 
-const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, currentUser, onToggleFavorite }) => {
+const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, currentUser, onToggleFavorite, isTranslating = false }) => {
   const { t } = useLanguage();
   const TABS = [
     t('projectDetail.tabs.story'), 
@@ -176,7 +177,15 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, 
             <div className="lg:w-2/3">
                  <motion.div layoutId={`project-card-${project.id}`} className="mb-8">
                     <div className="flex items-start gap-4">
-                        <motion.h1 layoutId={`project-title-${project.id}`} className="text-4xl lg:text-5xl font-extrabold text-white tracking-tight text-glow">{project.title}</motion.h1>
+                        <div className="flex items-center gap-3">
+                            <motion.h1 layoutId={`project-title-${project.id}`} className="text-4xl lg:text-5xl font-extrabold text-white tracking-tight text-glow">{project.title}</motion.h1>
+                            {isTranslating && (
+                                <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 border border-blue-400/30 rounded-full">
+                                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                                    <span className="text-xs text-blue-300 font-medium">Translating...</span>
+                                </div>
+                            )}
+                        </div>
                          {currentUser && (
                             <motion.button 
                                 initial={{ scale: 0 }} animate={{ scale: 1 }}

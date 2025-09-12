@@ -104,6 +104,19 @@ export interface Project {
   anticipationScore: number; // 0-100
   impactScore: number; // 0-100
   efficiencyScore: number; // 0-100
+  // Translation support
+  translations?: {
+    [language: string]: {
+      title: string;
+      tagline: string;
+      description: string;
+      problems?: string;
+      creatorBio: string;
+      faq: { question: string; answer: string; }[];
+      rewards: { title: string; description: string; }[];
+    };
+  };
+  isTranslating?: boolean; // Loading state for translation
 }
 
 export interface BlogPost {

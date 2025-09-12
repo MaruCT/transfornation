@@ -21,6 +21,7 @@ import { mockBlogPosts, mockEvents } from './services/mockData';
 import Confetti from './components/Confetti';
 import SuccessModal from './components/SuccessModal';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { useProjectTranslation } from './hooks/useProjectTranslation';
 
 
 const pageVariants = {
@@ -142,7 +143,8 @@ const AppContent: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   
   const [fundedProjectInfo, setFundedProjectInfo] = useState<{ title: string; amount: number; isFounder: boolean } | null>(null);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { getTranslatedContent, translateProjectContent, isTranslating } = useProjectTranslation();
 
 
   const categories = useMemo(() => Array.from(new Set(projects.map(p => p.category))), [projects]);
@@ -150,6 +152,37 @@ const AppContent: React.FC = () => {
     if (selectedCategory === 'All') return projects;
     return projects.filter(p => p.category === selectedCategory);
   }, [projects, selectedCategory]);
+
+  // Get translated project content
+  const getTranslatedProject = useCallback((project: Project): Project => {
+    const translatedContent = getTranslatedContent(project, language);
+    
+    if (!translatedContent) {
+      return project;
+    }
+
+    return {
+      ...project,
+      title: translatedContent.title,
+      tagline: translatedContent.tagline,
+      description: translatedContent.description,
+      problems: translatedContent.problems,
+      creatorBio: translatedContent.creatorBio,
+      faq: translatedContent.faq,
+      rewards: project.rewards.map((reward, index) => ({
+        ...reward,
+        title: translatedContent.rewards[index]?.title || reward.title,
+        description: translatedContent.rewards[index]?.description || reward.description
+      }))
+    };
+  }, [getTranslatedContent, language]);
+
+  // Auto-translate project when language changes
+  useEffect(() => {
+    if (selectedProject && language !== 'ru') {
+      translateProjectContent(selectedProject, language);
+    }
+  }, [selectedProject, language, translateProjectContent]);
 
 
   const fetchInitialData = useCallback(async () => {
@@ -225,7 +258,10 @@ const AppContent: React.FC = () => {
       }
       window.history.pushState({ p: project.id }, '', url.toString());
     } catch {}
-    setSelectedProject(project);
+    
+    // Get translated version of the project
+    const translatedProject = getTranslatedProject(project);
+    setSelectedProject(translatedProject);
     setView(View.ProjectDetail);
     window.scrollTo(0,0);
   };
@@ -485,6 +521,7 @@ const AppContent: React.FC = () => {
                                     onBack={() => handleSetView(View.Home)} 
                                     onFund={handleFundProject} 
                                     currentUser={currentUser}
+                                    isTranslating={isTranslating(selectedProject.id)}
                                     onToggleFavorite={handleToggleFavorite}
                                   />;
       case View.EventDetail:
