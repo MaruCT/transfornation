@@ -199,13 +199,13 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
     const s = url.trim();
     // Match file id in typical Drive file URL
     let m = s.match(/https:\/\/drive\.google\.com\/file\/d\/([^/?#]+)(?:[/?#]|$)/);
-    if (m) return `https://drive.google.com/file/d/${m[1]}/preview`;
+    if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
     // open?id=...
     m = s.match(/https:\/\/drive\.google\.com\/open\?[^#]*\bid=([^&#]+)/);
-    if (m) return `https://drive.google.com/file/d/${decodeURIComponent(m[1])}/preview`;
+    if (m) return `https://drive.google.com/uc?export=download&id=${decodeURIComponent(m[1])}`;
     // generic id=... on drive
     m = s.match(/\bid=([^&#]+)/);
-    if (m && /drive\.google\.com/.test(s)) return `https://drive.google.com/file/d/${decodeURIComponent(m[1])}/preview`;
+    if (m && /drive\.google\.com/.test(s)) return `https://drive.google.com/uc?export=download&id=${decodeURIComponent(m[1])}`;
     return s;
   };
 

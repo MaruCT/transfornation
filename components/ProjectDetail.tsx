@@ -122,21 +122,10 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, 
   
   const [activeMedia, setActiveMedia] = useState<MediaItem>(mediaForDisplay[0] || { type: 'image', url: project.imageUrl });
   const [isMediaLoading, setIsMediaLoading] = useState<boolean>(true);
-  const [driveEmbedFallback, setDriveEmbedFallback] = useState<boolean>(false);
 
   React.useEffect(() => {
-    // Reset loader and fallback when media changes
+    // Reset loader when media changes
     setIsMediaLoading(true);
-    setDriveEmbedFallback(false);
-    const isDrivePreview = /drive\.google\.com\/.+\/preview/.test(activeMedia.url);
-    if (activeMedia.type === 'video' && isDrivePreview) {
-      const timer = setTimeout(() => {
-        // If still loading after timeout, enable fallback
-        setDriveEmbedFallback(true);
-      }, 8000);
-      return () => clearTimeout(timer);
-    }
-    return () => {};
   }, [activeMedia]);
   
   const progressPercentage = Math.min((project.pledged / project.goal) * 100, 100);
@@ -217,65 +206,20 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, 
                                         className="w-full h-full object-cover" 
                                         onLoad={() => setIsMediaLoading(false)}
                                     />
-                                ) : (() => {
-                                    const isDrivePreview = /drive\.google\.com\/.+\/preview/.test(activeMedia.url);
-                                    if (isDrivePreview) {
-                                        const hasQuery = /\?/.test(activeMedia.url);
-                                        const params = 'autoplay=1&mute=1&loop=1';
-                                        const src = `${activeMedia.url}${hasQuery ? '&' : '?'}${params}`;
-                                        // Extract Drive file id to build a download fallback URL
-                                        const idMatch = activeMedia.url.match(/\/file\/d\/([^/]+)/) || activeMedia.url.match(/id=([^&#]+)/);
-                                        const fileId = idMatch ? decodeURIComponent(idMatch[1]) : '';
-                                        const downloadUrl = fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : '';
-                                        if (!driveEmbedFallback) {
-                                          return (
-                                            <iframe
-                                              src={src}
-                                              allow="autoplay; encrypted-media"
-                                              className="w-full h-full"
-                                              onLoad={() => setIsMediaLoading(false)}
-                                            />
-                                          );
-                                        }
-                                        // Fallback to HTML5 video using direct download URL
-                                        return (
-                                          <div className="w-full h-full">
-                                            {downloadUrl ? (
-                                              <video
-                                                src={downloadUrl}
-                                                autoPlay
-                                                muted
-                                                loop
-                                                playsInline
-                                                preload="auto"
-                                                className="w-full h-full object-cover"
-                                                controlsList="nodownload noplaybackrate nofullscreen"
-                                                disablePictureInPicture
-                                                onLoadedData={() => setIsMediaLoading(false)}
-                                                onError={() => setIsMediaLoading(false)}
-                                              />
-                                            ) : (
-                                              <a href={activeMedia.url} target="_blank" rel="noreferrer" className="text-sm text-blue-300 underline">Open video</a>
-                                            )}
-                                          </div>
-                                        );
-                                    }
-                                    return (
-                                        <video
-                                            src={activeMedia.url}
-                                            autoPlay
-                                            muted
-                                            loop
-                                            playsInline
-                                            preload="auto"
-                                            className="w-full h-full object-cover"
-                                            controlsList="nodownload noplaybackrate nofullscreen"
-                                            disablePictureInPicture
-                                            onLoadedData={() => setIsMediaLoading(false)}
-                                            onError={() => setIsMediaLoading(false)}
-                                        />
-                                    );
-                                })()}
+                                ) : (
+                                    <video
+                                        src={activeMedia.url}
+                                        autoPlay
+                                        muted
+                                        loop
+                                        playsInline
+                                        preload="auto"
+                                        className="w-full h-full object-cover"
+                                        controlsList="nodownload noplaybackrate nofullscreen"
+                                        disablePictureInPicture
+                                        onLoadedData={() => setIsMediaLoading(false)}
+                                        onError={() => setIsMediaLoading(false)}
+                                    />
                             </motion.div>
                         </AnimatePresence>
 
