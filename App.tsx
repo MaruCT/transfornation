@@ -162,8 +162,13 @@ const AppContent: React.FC = () => {
     return projects.filter(p => p.category === selectedCategory);
   }, [projects, selectedCategory]);
 
-  // Get translated project content
+  // Get translated project content - SIMPLIFIED
   const getTranslatedProject = useCallback((project: Project): Project => {
+    // For Russian, always return original content
+    if (language === 'ru') {
+      return project;
+    }
+    
     const translatedContent = getTranslatedContent(project, language);
     
     if (!translatedContent) {
@@ -187,50 +192,34 @@ const AppContent: React.FC = () => {
   }, [getTranslatedContent, language]);
 
 
-  // Auto-translate project when language changes
+  // Auto-translate project when language changes - SIMPLIFIED
   useEffect(() => {
     const currentProject = selectedProjectRef.current;
     if (currentProject && language !== prevLanguageRef.current) {
-      // For Russian, show original content immediately
-      if (language === 'ru') {
-        setSelectedProject(currentProject);
-        setIsContentReady(true);
-        setTranslationUpdateKey(prev => prev + 1);
-      } else {
-        // For other languages, check cache first
+      // Always use getTranslatedProject which handles Russian automatically
+      const translatedProject = getTranslatedProject(currentProject);
+      setSelectedProject(translatedProject);
+      setIsContentReady(true);
+      setTranslationUpdateKey(prev => prev + 1);
+      
+      // For non-Russian languages, start translation in background if needed
+      if (language !== 'ru') {
         const cachedTranslation = getTranslatedContent(currentProject, language);
-        if (cachedTranslation) {
-          const translatedProject = getTranslatedProject(currentProject);
-          setSelectedProject(translatedProject);
-          setIsContentReady(true);
-          setTranslationUpdateKey(prev => prev + 1);
-        } else {
-          // Start translation
-          setIsContentReady(false);
+        if (!cachedTranslation) {
           translateProjectContent(currentProject, language).then((translation) => {
             if (translation) {
               const updatedProject = getTranslatedProject(currentProject);
               setSelectedProject(updatedProject);
-              setIsContentReady(true);
-              setTranslationUpdateKey(prev => prev + 1);
-            } else {
-              // Fallback to original
-              setSelectedProject(currentProject);
-              setIsContentReady(true);
               setTranslationUpdateKey(prev => prev + 1);
             }
           }).catch((error) => {
             console.error('Translation failed:', error);
-            // Fallback to original
-            setSelectedProject(currentProject);
-            setIsContentReady(true);
-            setTranslationUpdateKey(prev => prev + 1);
           });
         }
       }
     }
     prevLanguageRef.current = language;
-  }, [language, getTranslatedContent, getTranslatedProject, translateProjectContent]);
+  }, [language, getTranslatedProject, getTranslatedContent, translateProjectContent]);
 
 
   const fetchInitialData = useCallback(async () => {
@@ -265,7 +254,7 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
-  // Открываем проект по URL (?p=ID) после загрузки проектов
+  // Открываем проект по URL (?p=ID) после загрузки проектов - SIMPLIFIED
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -275,43 +264,23 @@ const AppContent: React.FC = () => {
         const proj = slug ? projects.find(p => p.slug === slug) : projects.find(p => p.id === pid!);
         if (proj) {
           setView(View.ProjectDetail);
-          setSelectedProject(proj);
+          const translatedProject = getTranslatedProject(proj);
+          setSelectedProject(translatedProject);
+          setIsContentReady(true);
+          setTranslationUpdateKey(prev => prev + 1);
           
-          // Check if we need translation
-          if (language === 'ru') {
-            // Russian - show immediately
-            setIsContentReady(true);
-            setTranslationUpdateKey(prev => prev + 1);
-          } else {
-            // Other languages - check cache first
+          // For non-Russian languages, start translation in background if needed
+          if (language !== 'ru') {
             const cachedTranslation = getTranslatedContent(proj, language);
-            if (cachedTranslation) {
-              // Use cached translation
-              const translatedProject = getTranslatedProject(proj);
-              setSelectedProject(translatedProject);
-              setIsContentReady(true);
-              setTranslationUpdateKey(prev => prev + 1);
-            } else {
-              // Start translation
-              setIsContentReady(false);
+            if (!cachedTranslation) {
               translateProjectContent(proj, language).then((translation) => {
                 if (translation) {
                   const updatedProject = getTranslatedProject(proj);
                   setSelectedProject(updatedProject);
-                  setIsContentReady(true);
-                  setTranslationUpdateKey(prev => prev + 1);
-                } else {
-                  // Fallback to original
-                  setSelectedProject(proj);
-                  setIsContentReady(true);
                   setTranslationUpdateKey(prev => prev + 1);
                 }
               }).catch((error) => {
                 console.error('Translation failed:', error);
-                // Fallback to original
-                setSelectedProject(proj);
-                setIsContentReady(true);
-                setTranslationUpdateKey(prev => prev + 1);
               });
             }
           }
@@ -320,7 +289,7 @@ const AppContent: React.FC = () => {
     } catch (error) {
       console.error('Error loading project from URL:', error);
     }
-  }, [projects, language, getTranslatedContent, getTranslatedProject, translateProjectContent]);
+  }, [projects, language, getTranslatedProject, getTranslatedContent, translateProjectContent]);
 
 
   useEffect(() => {
@@ -348,46 +317,26 @@ const AppContent: React.FC = () => {
       window.history.pushState({ p: project.id }, '', url.toString());
     } catch {}
     
-    // Set view and project
+    // Set view and project - SIMPLIFIED
     setView(View.ProjectDetail);
-    setSelectedProject(project);
+    const translatedProject = getTranslatedProject(project);
+    setSelectedProject(translatedProject);
+    setIsContentReady(true);
+    setTranslationUpdateKey(prev => prev + 1);
     window.scrollTo(0,0);
     
-    // Check if we need translation
-    if (language === 'ru') {
-      // Russian - show immediately
-      setIsContentReady(true);
-      setTranslationUpdateKey(prev => prev + 1);
-    } else {
-      // Other languages - check cache first
+    // For non-Russian languages, start translation in background if needed
+    if (language !== 'ru') {
       const cachedTranslation = getTranslatedContent(project, language);
-      if (cachedTranslation) {
-        // Use cached translation
-        const translatedProject = getTranslatedProject(project);
-        setSelectedProject(translatedProject);
-        setIsContentReady(true);
-        setTranslationUpdateKey(prev => prev + 1);
-      } else {
-        // Start translation
-        setIsContentReady(false);
+      if (!cachedTranslation) {
         translateProjectContent(project, language).then((translation) => {
           if (translation) {
             const updatedProject = getTranslatedProject(project);
             setSelectedProject(updatedProject);
-            setIsContentReady(true);
-            setTranslationUpdateKey(prev => prev + 1);
-          } else {
-            // Fallback to original
-            setSelectedProject(project);
-            setIsContentReady(true);
             setTranslationUpdateKey(prev => prev + 1);
           }
         }).catch((error) => {
           console.error('Translation failed:', error);
-          // Fallback to original
-          setSelectedProject(project);
-          setIsContentReady(true);
-          setTranslationUpdateKey(prev => prev + 1);
         });
       }
     }

@@ -42,6 +42,17 @@ const parseBoolean = (raw: string | undefined, def = false): boolean => {
   return s === 'true' || s === '1' || s === 'yes' || s === 'y';
 };
 
+// Fix HTTP links to HTTPS to avoid Mixed Content warnings
+const fixHttpToHttps = (url: string | undefined): string => {
+  if (!url) return '';
+  const s = url.trim();
+  // Convert HTTP to HTTPS for external links
+  if (s.startsWith('http://') && !s.includes('localhost') && !s.includes('127.0.0.1')) {
+    return s.replace('http://', 'https://');
+  }
+  return s;
+};
+
 export async function loadProjectsFromCSV(): Promise<Project[]> {
   const res = await fetch(CSV_URL, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Failed to fetch CSV: ${res.status}`);
@@ -177,7 +188,7 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
 
   const normalizeDriveUrl = (url: string | undefined) => {
     if (!url) return '';
-    const s = url.trim();
+    const s = fixHttpToHttps(url).trim();
     // If it's already a Drive thumbnail link, keep as is
     if (/https:\/\/drive\.google\.com\/thumbnail\?/.test(s)) return s;
     // file/d/{id}/...
@@ -196,7 +207,7 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
 
   const normalizeDriveVideoUrl = (url: string | undefined) => {
     if (!url) return '';
-    const s = url.trim();
+    const s = fixHttpToHttps(url).trim();
     // Match file id in typical Drive file URL
     let m = s.match(/https:\/\/drive\.google\.com\/file\/d\/([^/?#]+)(?:[/?#]|$)/);
     if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
