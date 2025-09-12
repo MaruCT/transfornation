@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { View, type User } from '../types';
 import { UserCircleIcon, LogOutIcon, MenuIcon, XIcon, GlobeIcon } from './Icons';
-import LogoNew from '../Logo_New.png';
+import LogoNew from '/Logo_New.png';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface HeaderProps {
