@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF--8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transfornation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
+    "react/": "https://esm.sh/react@^19.1.1/",
+    "framer-motion": "https://esm.sh/framer-motion@^11.3.12",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.19.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.417.0"
+  }
+}
+</script>
+<style>
+  :root {
+    --accent-glow-color: rgba(136, 177, 255, 0.5);
+    --accent-secondary-glow-color: rgba(0, 87, 255, 0.4);
+    --white-glow-color: rgba(255, 255, 255, 0.3);
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: #00091B;
+    overflow-x: hidden;
+  }
+  .nebula-background {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: -2;
+    overflow: hidden;
+  }
+  .noise-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800"><filter id="f"><feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23f)" opacity=".03"/></svg>');
+    animation: noise-pan 10s linear infinite;
+  }
+
+  @keyframes noise-pan {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(-100px, -100px); }
+  }
+
+  .text-glow {
+    text-shadow: 0 0 8px var(--white-glow-color), 0 0 16px var(--white-glow-color);
+  }
+  .text-glow-accent {
+    text-shadow: 0 0 12px var(--accent-glow-color);
+  }
+  
+  /* Masonry layout for project list */
+  .masonry-grid {
+    column-count: 1;
+    column-gap: 2rem;
+  }
+  @media (min-width: 768px) {
+    .masonry-grid {
+      column-count: 2;
+    }
+  }
+  @media (min-width: 1024px) {
+    .masonry-grid {
+      column-count: 3;
+    }
+  }
+  .masonry-item {
+    break-inside: avoid;
+    margin-bottom: 2rem;
+    display: inline-block;
+    width: 100%;
+  }
+
+  /* Horizontal Marquee Animation for Landing Page */
+  @keyframes scroll-left {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+  }
+
+  @keyframes scroll-right {
+      from { transform: translateX(-50%); }
+      to { transform: translateX(0); }
+  }
+
+  .marquee-row {
+      width: 100%;
+      display: flex;
+      overflow: hidden;
+      -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+      mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  }
+
+  .marquee-content {
+      display: flex;
+      flex-shrink: 0;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+  }
+
+  .animate-scroll-left {
+      animation-name: scroll-left;
+  }
+
+  .animate-scroll-right {
+      animation-name: scroll-right;
+  }
+
+  .marquee-row:hover .marquee-content {
+      animation-play-state: paused;
+  }
+</style>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div class="nebula-background"></div>
+    <div class="noise-overlay"></div>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
