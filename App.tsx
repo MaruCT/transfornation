@@ -127,6 +127,11 @@ const AppContent: React.FC = () => {
   const [view, setView] = useState<View>(View.Landing);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  
+  // Update ref when selectedProject changes
+  useEffect(() => {
+    selectedProjectRef.current = selectedProject;
+  }, [selectedProject]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -146,6 +151,7 @@ const AppContent: React.FC = () => {
   const { t, language } = useLanguage();
   const { getTranslatedContent, translateProjectContent, isTranslating } = useProjectTranslation();
   const prevLanguageRef = useRef(language);
+  const selectedProjectRef = useRef<Project | null>(null);
   const [translationUpdateKey, setTranslationUpdateKey] = useState(0); // Force re-render after translation
 
 
@@ -207,25 +213,31 @@ const AppContent: React.FC = () => {
 
   // Auto-translate project when language changes
   useEffect(() => {
-    if (selectedProject && language !== prevLanguageRef.current) {
+    const currentProject = selectedProjectRef.current;
+    if (currentProject && language !== prevLanguageRef.current) {
       // Get translated version immediately
-      const translatedProject = getTranslatedProject(selectedProject);
+      const translatedProject = getTranslatedProject(currentProject);
       setSelectedProject(translatedProject);
       setTranslationUpdateKey(prev => prev + 1);
       
       // If no cached translation exists and language is not Russian, start translation
-      if (language !== 'ru' && !getTranslatedContent(selectedProject, language)) {
-        translateProjectContent(selectedProject, language).then((translation) => {
-          if (translation) {
-            const updatedProject = getTranslatedProject(selectedProject);
-            setSelectedProject(updatedProject);
-            setTranslationUpdateKey(prev => prev + 1);
-          }
-        });
+      if (language !== 'ru' && !getTranslatedContent(currentProject, language)) {
+        // Use a timeout to avoid blocking the UI
+        setTimeout(() => {
+          translateProjectContent(currentProject, language).then((translation) => {
+            if (translation) {
+              const updatedProject = getTranslatedProject(currentProject);
+              setSelectedProject(updatedProject);
+              setTranslationUpdateKey(prev => prev + 1);
+            }
+          }).catch((error) => {
+            console.error('Translation failed:', error);
+          });
+        }, 100);
       }
     }
     prevLanguageRef.current = language;
-  }, [language]); // Only depend on language to avoid infinite loops
+  }, [language, getTranslatedProject, getTranslatedContent, translateProjectContent]);
 
 
   const fetchInitialData = useCallback(async () => {
@@ -340,6 +352,7 @@ const AppContent: React.FC = () => {
     if (newView === View.Home || newView === View.Landing) {
         setSelectedProject(null);
         setSelectedEvent(null);
+        setTranslationUpdateKey(0); // Reset translation key
         // Чистим параметры из URL при выходе из карточки
         try {
           const url = new URL(window.location.href);
@@ -357,6 +370,7 @@ const AppContent: React.FC = () => {
         return;
     }
     setView(newView);
+    window.scrollTo(0,0);
   }
   
   const handleSelectCategoryAndNavigate = (category: string) => {
