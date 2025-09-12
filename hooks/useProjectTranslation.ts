@@ -34,8 +34,11 @@ export function useProjectTranslation() {
 
   // Get translated content for a project
   const getTranslatedContent = useCallback((project: Project, language: string) => {
+    console.log('getTranslatedContent called for project:', project.id, 'language:', language);
+    
     if (language === 'ru') {
       // Russian is the original language, return original content
+      console.log('Returning original content for Russian');
       return {
         title: project.title,
         tagline: project.tagline,
@@ -50,10 +53,14 @@ export function useProjectTranslation() {
     const cache = getCachedTranslations();
     const projectTranslations = cache[project.id];
     
+    console.log('Cache for project:', project.id, ':', projectTranslations);
+    
     if (projectTranslations && projectTranslations[language]) {
+      console.log('Found cached translation for language:', language);
       return projectTranslations[language];
     }
 
+    console.log('No cached translation found, returning null');
     return null;
   }, [getCachedTranslations]);
 

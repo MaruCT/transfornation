@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion, Transition } from 'framer-motion';
 import type { Project, Backer, ChatMessage, User, Pledge, Reward, MediaItem, Event, BlogPost, TeamMember, SocialLink } from './types';
 import { View } from './types';
@@ -145,6 +145,7 @@ const AppContent: React.FC = () => {
   const [fundedProjectInfo, setFundedProjectInfo] = useState<{ title: string; amount: number; isFounder: boolean } | null>(null);
   const { t, language } = useLanguage();
   const { getTranslatedContent, translateProjectContent, isTranslating } = useProjectTranslation();
+  const prevLanguageRef = useRef(language);
 
 
   const categories = useMemo(() => Array.from(new Set(projects.map(p => p.category))), [projects]);
@@ -179,10 +180,28 @@ const AppContent: React.FC = () => {
 
   // Auto-translate project when language changes
   useEffect(() => {
-    if (selectedProject && language !== 'ru') {
-      translateProjectContent(selectedProject, language);
+    if (selectedProject && language !== prevLanguageRef.current) {
+      console.log('Language changed to:', language, 'for project:', selectedProject.id);
+      
+      // Always get the translated version (even for Russian, it will return original)
+      const translatedProject = getTranslatedProject(selectedProject);
+      setSelectedProject(translatedProject);
+      
+      // If no cached translation exists and language is not Russian, start translation
+      if (language !== 'ru' && !getTranslatedContent(selectedProject, language)) {
+        console.log('Starting translation for project:', selectedProject.id, 'to language:', language);
+        translateProjectContent(selectedProject, language).then((translation) => {
+          if (translation) {
+            console.log('Translation completed, updating project');
+            // Update the selected project with the new translation
+            const updatedProject = getTranslatedProject(selectedProject);
+            setSelectedProject(updatedProject);
+          }
+        });
+      }
     }
-  }, [selectedProject, language, translateProjectContent]);
+    prevLanguageRef.current = language;
+  }, [language, selectedProject, getTranslatedProject, getTranslatedContent, translateProjectContent]);
 
 
   const fetchInitialData = useCallback(async () => {
@@ -259,9 +278,8 @@ const AppContent: React.FC = () => {
       window.history.pushState({ p: project.id }, '', url.toString());
     } catch {}
     
-    // Get translated version of the project
-    const translatedProject = getTranslatedProject(project);
-    setSelectedProject(translatedProject);
+    // Set the original project first, translation will be handled by useEffect
+    setSelectedProject(project);
     setView(View.ProjectDetail);
     window.scrollTo(0,0);
   };
