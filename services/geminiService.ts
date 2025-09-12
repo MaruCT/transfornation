@@ -3,12 +3,23 @@ import { GoogleGenAI, Type } from "@google/genai";
 import type { Project, Reward, Comment, AnalysisResult, Backer, MediaItem, TeamMember, SocialLink } from '../types';
 import { loadProjectsFromCSV } from './csvImport';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Lazy init Gemini only if API key is available. Avoid constructing in browser without key.
+function getGemini() {
+    const key = (import.meta as any).env?.VITE_GEMINI_API_KEY || (process as any)?.env?.API_KEY;
+    if (!key) return null;
+    try {
+        return new GoogleGenAI({ apiKey: key });
+    } catch {
+        return null;
+    }
+}
 
 const MOCK_PROJECT_VIDEO = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 
 export const generateProjectImage = async (title: string): Promise<string> => {
     try {
+        const ai = getGemini();
+        if (!ai) throw new Error('No Gemini API key');
         const prompt = `A cinematic, professional product photo of "${title}". High-resolution, dramatic lighting, minimalist background. 16:9 aspect ratio.`;
         const response = await ai.models.generateImages({
             model: 'imagen-4.0-generate-001',
@@ -30,6 +41,8 @@ export const generateProjectImage = async (title: string): Promise<string> => {
 
 export const generateFoundersPassImage = async (title: string, backerName: string): Promise<string> => {
     try {
+        const ai = getGemini();
+        if (!ai) throw new Error('No Gemini API key');
         const prompt = `A holographic, abstract, generative art digital pass. Inspired by the project "${title}". For founder "${backerName}". Neon colors, dark background, ethereal, unique, collectible. 3:4 aspect ratio.`;
         const response = await ai.models.generateImages({
             model: 'imagen-4.0-generate-001',
@@ -50,6 +63,8 @@ export const generateFoundersPassImage = async (title: string, backerName: strin
 
 export const generateVideoTrailer = async (title: string, tagline: string): Promise<string> => {
     try {
+        const ai = getGemini();
+        if (!ai) throw new Error('No Gemini API key');
         console.log("Starting video generation for:", title);
         let operation = await ai.models.generateVideos({
             model: 'veo-2.0-generate-001',
@@ -98,6 +113,8 @@ export const summarizeComments = async (comments: Comment[]): Promise<{ sentimen
     ${userCommentsText}`;
     
     try {
+        const ai = getGemini();
+        if (!ai) throw new Error('No Gemini API key');
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
@@ -397,6 +414,8 @@ export const generateProjectScores = async (title: string, description: string):
     Project Title: "${title}"
     Description: ${description.substring(0, 500)}...`;
     try {
+        const ai = getGemini();
+        if (!ai) throw new Error('No Gemini API key');
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
@@ -428,6 +447,8 @@ export const generateProjectDetailsFromIdea = async (idea: string, creatorName: 
     Project Idea: "${idea}"
     Creator Name: "${creatorName}"`;
     try {
+        const ai = getGemini();
+        if (!ai) throw new Error('No Gemini API key');
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
@@ -463,6 +484,8 @@ export const suggestRewards = async (projectTitle: string, projectDescription: s
     One should be a premium 'Founder's Pass' by setting isFoundersPass to true.
     Description: ${projectDescription.substring(0, 300)}...`;
     try {
+        const ai = getGemini();
+        if (!ai) throw new Error('No Gemini API key');
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
@@ -579,6 +602,8 @@ export const analyzeCampaignReadiness = async (projectData: any): Promise<Analys
 };
 
 export const streamChatResponse = async (messages: { role: string; content: string }[]) => {
+    const ai = getGemini();
+    if (!ai) throw new Error('No Gemini API key');
     // Gemini uses 'systemInstruction' for system prompts.
     const systemInstruction = messages.find(m => m.role === 'system')?.content;
 
