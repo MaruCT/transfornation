@@ -146,6 +146,7 @@ const AppContent: React.FC = () => {
   const { t, language } = useLanguage();
   const { getTranslatedContent, translateProjectContent, isTranslating } = useProjectTranslation();
   const prevLanguageRef = useRef(language);
+  const [translationUpdateKey, setTranslationUpdateKey] = useState(0); // Force re-render after translation
 
 
   const categories = useMemo(() => Array.from(new Set(projects.map(p => p.category))), [projects]);
@@ -184,14 +185,19 @@ const AppContent: React.FC = () => {
       // Always get the translated version (even for Russian, it will return original)
       const translatedProject = getTranslatedProject(selectedProject);
       setSelectedProject(translatedProject);
+      setTranslationUpdateKey(prev => prev + 1); // Force re-render immediately
       
       // If no cached translation exists and language is not Russian, start translation
       if (language !== 'ru' && !getTranslatedContent(selectedProject, language)) {
         translateProjectContent(selectedProject, language).then((translation) => {
           if (translation) {
             // Update the selected project with the new translation
-            const updatedProject = getTranslatedProject(selectedProject);
-            setSelectedProject(updatedProject);
+            // Use a fresh call to getTranslatedProject to ensure we get the latest cached translation
+            setTimeout(() => {
+              const updatedProject = getTranslatedProject(selectedProject);
+              setSelectedProject(updatedProject);
+              setTranslationUpdateKey(prev => prev + 1); // Force re-render
+            }, 100); // Small delay to ensure cache is updated
           }
         });
       }
@@ -248,8 +254,11 @@ const AppContent: React.FC = () => {
           if (language !== 'ru' && !getTranslatedContent(proj, language)) {
             translateProjectContent(proj, language).then((translation) => {
               if (translation) {
-                const updatedProject = getTranslatedProject(proj);
-                setSelectedProject(updatedProject);
+                setTimeout(() => {
+                  const updatedProject = getTranslatedProject(proj);
+                  setSelectedProject(updatedProject);
+                  setTranslationUpdateKey(prev => prev + 1); // Force re-render
+                }, 100); // Small delay to ensure cache is updated
               }
             });
           }
@@ -293,8 +302,11 @@ const AppContent: React.FC = () => {
     if (language !== 'ru' && !getTranslatedContent(project, language)) {
       translateProjectContent(project, language).then((translation) => {
         if (translation) {
-          const updatedProject = getTranslatedProject(project);
-          setSelectedProject(updatedProject);
+          setTimeout(() => {
+            const updatedProject = getTranslatedProject(project);
+            setSelectedProject(updatedProject);
+            setTranslationUpdateKey(prev => prev + 1); // Force re-render
+          }, 100); // Small delay to ensure cache is updated
         }
       });
     }
@@ -551,6 +563,7 @@ const AppContent: React.FC = () => {
     switch (view) {
       case View.ProjectDetail:
         return selectedProject && <ProjectDetail 
+                                    key={`${selectedProject.id}-${translationUpdateKey}`}
                                     project={selectedProject} 
                                     onBack={() => handleSetView(View.Home)} 
                                     onFund={handleFundProject} 
