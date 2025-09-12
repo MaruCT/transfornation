@@ -181,18 +181,14 @@ const AppContent: React.FC = () => {
   // Auto-translate project when language changes
   useEffect(() => {
     if (selectedProject && language !== prevLanguageRef.current) {
-      console.log('Language changed to:', language, 'for project:', selectedProject.id);
-      
       // Always get the translated version (even for Russian, it will return original)
       const translatedProject = getTranslatedProject(selectedProject);
       setSelectedProject(translatedProject);
       
       // If no cached translation exists and language is not Russian, start translation
       if (language !== 'ru' && !getTranslatedContent(selectedProject, language)) {
-        console.log('Starting translation for project:', selectedProject.id, 'to language:', language);
         translateProjectContent(selectedProject, language).then((translation) => {
           if (translation) {
-            console.log('Translation completed, updating project');
             // Update the selected project with the new translation
             const updatedProject = getTranslatedProject(selectedProject);
             setSelectedProject(updatedProject);
@@ -201,7 +197,7 @@ const AppContent: React.FC = () => {
       }
     }
     prevLanguageRef.current = language;
-  }, [language, selectedProject, getTranslatedProject, getTranslatedContent, translateProjectContent]);
+  }, [language]); // Remove selectedProject from dependencies to avoid issues
 
 
   const fetchInitialData = useCallback(async () => {
@@ -247,10 +243,20 @@ const AppContent: React.FC = () => {
         if (proj) {
           setSelectedProject(proj);
           setView(View.ProjectDetail);
+          
+          // If language is not Russian and no cached translation exists, start translation immediately
+          if (language !== 'ru' && !getTranslatedContent(proj, language)) {
+            translateProjectContent(proj, language).then((translation) => {
+              if (translation) {
+                const updatedProject = getTranslatedProject(proj);
+                setSelectedProject(updatedProject);
+              }
+            });
+          }
         }
       }
     } catch {}
-  }, [projects]);
+  }, [projects, language, getTranslatedContent, translateProjectContent, getTranslatedProject]);
 
 
   useEffect(() => {
@@ -278,10 +284,20 @@ const AppContent: React.FC = () => {
       window.history.pushState({ p: project.id }, '', url.toString());
     } catch {}
     
-    // Set the original project first, translation will be handled by useEffect
+    // Set the original project first
     setSelectedProject(project);
     setView(View.ProjectDetail);
     window.scrollTo(0,0);
+    
+    // If language is not Russian and no cached translation exists, start translation immediately
+    if (language !== 'ru' && !getTranslatedContent(project, language)) {
+      translateProjectContent(project, language).then((translation) => {
+        if (translation) {
+          const updatedProject = getTranslatedProject(project);
+          setSelectedProject(updatedProject);
+        }
+      });
+    }
   };
   
   const handleSelectEvent = (event: Event) => {
