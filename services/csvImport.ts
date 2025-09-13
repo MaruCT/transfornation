@@ -1,6 +1,57 @@
-import type { Project, MediaItem, TeamMember, SocialLink, Reward } from '../types';
+import type { Project, MediaItem, TeamMember, SocialLink, Reward, Comment, Backer } from '../types';
 
 const CSV_URL = (import.meta as any).env?.VITE_PROJECTS_CSV_URL || '/projects.csv';
+
+// Generate mock data for CSV projects
+function generateMockComments(projectTitle: string): Comment[] {
+  const commentTemplates = [
+    { text: "This looks amazing! Can't wait to see it in action.", author: "TechEnthusiast" },
+    { text: "Great concept! How can I get involved?", author: "Innovator" },
+    { text: "This could really make a difference in our community.", author: "CommunityLeader" },
+    { text: "Impressive work! When will this be available?", author: "EarlyAdopter" },
+    { text: "Love the vision behind this project. Count me in!", author: "Supporter" },
+    { text: "This is exactly what we need right now.", author: "ProblemSolver" },
+    { text: "Amazing progress! Keep up the great work.", author: "Follower" },
+    { text: "How can I help spread the word about this?", author: "Advocate" }
+  ];
+  
+  const numComments = Math.floor(Math.random() * 5) + 2; // 2-6 comments
+  return Array.from({ length: numComments }, (_, i) => {
+    const template = commentTemplates[i % commentTemplates.length];
+    return {
+      author: template.author,
+      avatar: `https://i.pravatar.cc/150?u=${template.author.toLowerCase()}_${i}`,
+      text: template.text,
+      date: `${Math.floor(Math.random() * 30) + 1} days ago`,
+      type: 'user' as const
+    };
+  });
+}
+
+function generateMockBackers(projectTitle: string, numBackers: number): Backer[] {
+  const levels = ['Bronze', 'Silver', 'Gold', 'Platinum'];
+  const badges = ['Early Bird', 'Super Supporter', 'Community Champion', 'Innovation Partner'];
+  
+  return Array.from({ length: numBackers }, (_, i) => {
+    const isFounder = i < Math.min(3, Math.floor(numBackers * 0.1));
+    return {
+      name: `Backer ${i + 1}`,
+      avatar: `https://i.pravatar.cc/150?u=${projectTitle.toLowerCase().replace(/\s+/g, '_')}_backer_${i}`,
+      level: levels[Math.floor(Math.random() * levels.length)],
+      badges: Math.random() > 0.7 ? [badges[Math.floor(Math.random() * badges.length)]] : [],
+      isFounder,
+      foundersPassImage: isFounder ? `https://picsum.photos/seed/${projectTitle.toLowerCase().replace(/\s+/g, '_')}_pass_${i}/300/400` : undefined
+    };
+  });
+}
+
+function generateMockScores(): { anticipationScore: number; impactScore: number; efficiencyScore: number } {
+  return {
+    anticipationScore: Math.floor(Math.random() * 30) + 70, // 70-100
+    impactScore: Math.floor(Math.random() * 25) + 75, // 75-100
+    efficiencyScore: Math.floor(Math.random() * 35) + 65 // 65-100
+  };
+}
 
 function parseJSONCell<T>(raw: string | undefined, fallback: T): T {
   if (!raw) return fallback;
@@ -287,11 +338,17 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
       media = [{ type: 'image', url: normalizedCover }, ...media];
     }
 
+    const title = sanitize(get('title')) || 'Untitled';
+    const numBackers = parseNumber(get('backers'), 0) || Math.floor(Math.random() * 50) + 10;
+    const mockScores = generateMockScores();
+    const mockComments = generateMockComments(title);
+    const mockBackers = generateMockBackers(title, numBackers);
+    
     const project: Project = {
       id: get('id') || crypto.randomUUID(),
       slug: sanitize(getAny(['slug', 'permalink'], cols)) || undefined,
       creatorId: get('creator') || 'unknown',
-      title: sanitize(get('title')) || 'Untitled',
+      title,
       creator: sanitize(get('creator')) || 'Unknown',
       creatorBio: sanitize(get('creatorBio')) || '',
       creatorAvatar: sanitize(stripBrackets(get('creatorAvatar')) || ''),
@@ -307,21 +364,24 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
       videoGenerationState: (get('videoGenerationState') as any) || 'none',
       goal: parseNumber(get('goal'), 0),
       pledged: parseNumber(get('pledged'), 0),
-      backers: parseNumber(get('backers'), 0),
+      backers: numBackers,
       fundingVelocity: (get('fundingVelocity') as any) || 'stable',
       faq,
       rewards,
-      comments: [],
-      commentSummary: { sentiment: 'N/A', summary: 'Not enough comments to analyze.' },
+      comments: mockComments,
+      commentSummary: { 
+        sentiment: 'Positive', 
+        summary: 'The community is excited about this project and its potential impact.' 
+      },
       roadmap: [],
       analysis: undefined,
-      backersList: [],
+      backersList: mockBackers,
       favoritedBy: [],
       city: get('city') || '',
       country: get('country') || '',
-      anticipationScore: parseNumber(get('anticipationScore'), 60),
-      impactScore: parseNumber(get('impactScore'), 60),
-      efficiencyScore: parseNumber(get('efficiencyScore'), 60),
+      anticipationScore: parseNumber(get('anticipationScore'), mockScores.anticipationScore),
+      impactScore: parseNumber(get('impactScore'), mockScores.impactScore),
+      efficiencyScore: parseNumber(get('efficiencyScore'), mockScores.efficiencyScore),
     };
 
     return project;
