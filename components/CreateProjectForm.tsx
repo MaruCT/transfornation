@@ -142,13 +142,16 @@ const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ onAddProject, onB
   };
   
   const handleGenerateDetails = async () => {
+      console.log("handleGenerateDetails called with:", { idea, creator: formData.creator, currentUser: currentUser.name });
       if (!idea || !formData.creator) {
-          alert("Please enter your name and project idea first.");
+          alert(`Please enter your name and project idea first. Current values: idea="${idea}", creator="${formData.creator}"`);
           return;
       }
       setIsGenerating(true);
       try {
+          console.log("Calling generateProjectDetailsFromIdea with:", idea, formData.creator);
           const { title, tagline, description, creatorBio } = await generateProjectDetailsFromIdea(idea, formData.creator);
+          console.log("Generated details:", { title, tagline, description, creatorBio });
           setFormData(prev => ({ ...prev, title, tagline, description, creatorBio }));
           nextStep();
       } catch (error) {
