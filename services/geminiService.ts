@@ -354,17 +354,19 @@ export const generateProjectScores = async (title: string, description: string):
 export const generateProjectDetailsFromIdea = async (idea: string, creatorName: string): Promise<{title: string, tagline: string, description: string, creatorBio: string}> => {
     try {
         // Временно возвращаем мок-данные, так как Gemini API отключен
-        console.log("generateProjectDetailsFromIdea called with:", { idea, creatorName });
+        console.log("🤖 generateProjectDetailsFromIdea called with:", { idea, creatorName });
+        console.warn("🔧 DEBUG: Generating mock project details...");
         const result = {
             title: idea.length > 50 ? idea.substring(0, 50) + "..." : idea,
             tagline: "Revolutionary impact project for Central Asia",
             description: `<h2>About This Project</h2><p>${idea}</p><h3>Our Mission</h3><p>Creating positive impact in Central Asia through innovative solutions.</p>`,
             creatorBio: `${creatorName} is passionate about creating meaningful change in Central Asia.`
         };
-        console.log("generateProjectDetailsFromIdea returning:", result);
+        console.log("📤 generateProjectDetailsFromIdea returning:", result);
+        console.warn("✅ MOCK DATA GENERATED SUCCESSFULLY!");
         return result;
     } catch (error) {
-        console.error("Error generating project details:", error);
+        console.error("❌ Error generating project details:", error);
         return {
             title: "Error Generating Title",
             tagline: "Please write a tagline manually.",

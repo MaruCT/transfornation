@@ -142,20 +142,22 @@ const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ onAddProject, onB
   };
   
   const handleGenerateDetails = async () => {
-      console.log("handleGenerateDetails called with:", { idea, creator: formData.creator, currentUser: currentUser.name });
+      console.log("🚀 handleGenerateDetails called with:", { idea, creator: formData.creator, currentUser: currentUser.name });
+      console.warn("⚠️ DEBUG: Starting project generation...");
       if (!idea || !formData.creator) {
           alert(`Please enter your name and project idea first. Current values: idea="${idea}", creator="${formData.creator}"`);
           return;
       }
       setIsGenerating(true);
       try {
-          console.log("Calling generateProjectDetailsFromIdea with:", idea, formData.creator);
+          console.log("📞 Calling generateProjectDetailsFromIdea with:", idea, formData.creator);
           const { title, tagline, description, creatorBio } = await generateProjectDetailsFromIdea(idea, formData.creator);
-          console.log("Generated details:", { title, tagline, description, creatorBio });
+          console.log("✅ Generated details:", { title, tagline, description, creatorBio });
+          console.warn("🎉 SUCCESS: Project details generated successfully!");
           setFormData(prev => ({ ...prev, title, tagline, description, creatorBio }));
           nextStep();
       } catch (error) {
-          console.error("Failed to generate details:", error);
+          console.error("❌ Failed to generate details:", error);
           alert("Sorry, we couldn't generate details at this time.");
       } finally {
           setIsGenerating(false);
