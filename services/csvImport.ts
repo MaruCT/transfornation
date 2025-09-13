@@ -1,6 +1,6 @@
 import type { Project, MediaItem, TeamMember, SocialLink, Reward, Comment, Backer } from '../types';
 
-const CSV_URL = (import.meta as any).env?.VITE_PROJECTS_CSV_URL || '/projects.csv';
+const CSV_URL = (import.meta as any).env?.VITE_PROJECTS_CSV_URL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS9xSZixnYNJMo8WKLPZEv9Wns4g0-7miMcht2DVu-f-V2iXxljIfszPE_dhEjuwMLj0DwH9fwmqV4X/pub?output=csv';
 
 // Generate mock data for CSV projects
 function generateMockComments(projectTitle: string): Comment[] {
