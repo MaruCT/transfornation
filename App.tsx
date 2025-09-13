@@ -96,7 +96,9 @@ const AppContent: React.FC = () => {
           setSelectedProject(project);
           setView(View.ProjectDetail);
         } else {
-          // Project not found, redirect to home
+          // Project not found, show error message and redirect to home
+          console.error(`Project with ID "${projectId}" not found. Available projects:`, projects.map(p => p.id));
+          alert(`Проект с ID "${projectId}" не найден. Доступные проекты: ${projects.map(p => p.id).join(', ')}`);
           window.history.replaceState({}, '', '/');
           setView(View.Landing);
         }
