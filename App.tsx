@@ -86,13 +86,19 @@ const AppContent: React.FC = () => {
       const path = window.location.pathname;
       const searchParams = new URLSearchParams(window.location.search);
       
+      console.log('URL changed to:', path, 'Projects loaded:', projects.length);
+      
       if (path === '/') {
         setView(View.Landing);
         setSelectedProject(null);
       } else if (path.startsWith('/project/')) {
         const projectId = path.split('/project/')[1];
+        console.log('Looking for project ID:', projectId);
+        console.log('Available project IDs:', projects.map(p => p.id));
+        
         const project = projects.find(p => p.id === projectId);
         if (project) {
+          console.log('Project found:', project.title);
           setSelectedProject(project);
           setView(View.ProjectDetail);
         } else {
@@ -154,6 +160,22 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
+
+  // Handle URL routing after projects are loaded
+  useEffect(() => {
+    if (projects.length > 0) {
+      const path = window.location.pathname;
+      if (path.startsWith('/project/')) {
+        const projectId = path.split('/project/')[1];
+        const project = projects.find(p => p.id === projectId);
+        if (project) {
+          console.log('Projects loaded, setting project:', project.title);
+          setSelectedProject(project);
+          setView(View.ProjectDetail);
+        }
+      }
+    }
+  }, [projects]);
   
   useEffect(() => {
     if (chatMessages.length === 0) {
