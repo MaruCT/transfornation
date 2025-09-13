@@ -3,15 +3,10 @@ import { GoogleGenAI, Type } from "@google/genai";
 import type { Project, Reward, Comment, AnalysisResult, Backer, MediaItem, TeamMember, SocialLink } from '../types';
 import { loadProjectsFromCSV } from './csvImport';
 
-// Lazy init Gemini only if API key is available. Avoid constructing in browser without key.
+// Gemini API полностью отключен - всегда возвращаем null
 function getGemini() {
-    const key = (import.meta as any).env?.VITE_GEMINI_API_KEY || (process as any)?.env?.API_KEY;
-    if (!key) return null;
-    try {
-        return new GoogleGenAI({ apiKey: key });
-    } catch {
-        return null;
-    }
+    console.log("🚫 getGemini() called but Gemini API is disabled - returning null");
+    return null;
 }
 
 const MOCK_PROJECT_VIDEO = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
@@ -352,21 +347,30 @@ export const generateProjectScores = async (title: string, description: string):
 };
 
 export const generateProjectDetailsFromIdea = async (idea: string, creatorName: string): Promise<{title: string, tagline: string, description: string, creatorBio: string}> => {
+    console.log("🤖 generateProjectDetailsFromIdea ENTRY POINT - NO GEMINI API CALLS!");
+    console.warn("🚫 GEMINI API IS COMPLETELY DISABLED - USING MOCK DATA ONLY!");
+    
     try {
         // Временно возвращаем мок-данные, так как Gemini API отключен
         console.log("🤖 generateProjectDetailsFromIdea called with:", { idea, creatorName });
         console.warn("🔧 DEBUG: Generating mock project details...");
+        
+        // Убеждаемся, что не вызываем никаких API
+        console.log("🔒 NO API CALLS - PURE MOCK DATA GENERATION");
+        
         const result = {
             title: idea.length > 50 ? idea.substring(0, 50) + "..." : idea,
             tagline: "Revolutionary impact project for Central Asia",
             description: `<h2>About This Project</h2><p>${idea}</p><h3>Our Mission</h3><p>Creating positive impact in Central Asia through innovative solutions.</p>`,
             creatorBio: `${creatorName} is passionate about creating meaningful change in Central Asia.`
         };
+        
         console.log("📤 generateProjectDetailsFromIdea returning:", result);
-        console.warn("✅ MOCK DATA GENERATED SUCCESSFULLY!");
+        console.warn("✅ MOCK DATA GENERATED SUCCESSFULLY - NO GEMINI API USED!");
         return result;
     } catch (error) {
-        console.error("❌ Error generating project details:", error);
+        console.error("❌ Error in generateProjectDetailsFromIdea:", error);
+        console.error("❌ This should never happen as we don't call any APIs!");
         return {
             title: "Error Generating Title",
             tagline: "Please write a tagline manually.",
