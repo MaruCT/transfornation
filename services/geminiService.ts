@@ -18,84 +18,33 @@ const MOCK_PROJECT_VIDEO = "https://storage.googleapis.com/gtv-videos-bucket/sam
 
 export const generateProjectImage = async (title: string): Promise<string> => {
     try {
-        const ai = getGemini();
-        if (!ai) throw new Error('No Gemini API key');
-        const prompt = `A cinematic, professional product photo of "${title}". High-resolution, dramatic lighting, minimalist background. 16:9 aspect ratio.`;
-        const response = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: prompt,
-            config: {
-                numberOfImages: 1,
-                outputMimeType: 'image/jpeg',
-                aspectRatio: '16:9',
-            },
-        });
-
-        const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
-        return `data:image/jpeg;base64,${base64ImageBytes}`;
+        // Временно возвращаем мок-изображение, так как Gemini API отключен
+        console.log("Generating mock project image for:", title);
+        return `https://picsum.photos/seed/${title.replace(/\s+/g, '')}/600/400`;
     } catch (error) {
-        console.error("Error generating image with Gemini, falling back to placeholder:", error);
+        console.error("Error generating project image:", error);
         return `https://picsum.photos/seed/${title.replace(/\s+/g, '')}/600/400`;
     }
 };
 
 export const generateFoundersPassImage = async (title: string, backerName: string): Promise<string> => {
     try {
-        const ai = getGemini();
-        if (!ai) throw new Error('No Gemini API key');
-        const prompt = `A holographic, abstract, generative art digital pass. Inspired by the project "${title}". For founder "${backerName}". Neon colors, dark background, ethereal, unique, collectible. 3:4 aspect ratio.`;
-        const response = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: prompt,
-            config: {
-                numberOfImages: 1,
-                outputMimeType: 'image/jpeg',
-                aspectRatio: '3:4',
-            },
-        });
-        const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
-        return `data:image/jpeg;base64,${base64ImageBytes}`;
+        // Временно возвращаем мок-изображение, так как Gemini API отключен
+        console.log("Generating mock founder's pass image for:", title, backerName);
+        return `https://picsum.photos/seed/${title.replace(/\s+/g, '')}${backerName}/300/400`;
     } catch (error) {
-        console.error("Error generating founder's pass image, falling back to placeholder:", error);
+        console.error("Error generating founder's pass image:", error);
         return `https://picsum.photos/seed/${title.replace(/\s+/g, '')}${backerName}/300/400`;
     }
 };
 
 export const generateVideoTrailer = async (title: string, tagline: string): Promise<string> => {
     try {
-        const ai = getGemini();
-        if (!ai) throw new Error('No Gemini API key');
-        console.log("Starting video generation for:", title);
-        let operation = await ai.models.generateVideos({
-            model: 'veo-2.0-generate-001',
-            prompt: `A cinematic, exciting trailer for a new product called "${title}". Tagline: "${tagline}". Epic music, dynamic shots, professional quality.`,
-            config: {
-                numberOfVideos: 1
-            }
-        });
-
-        console.log("Polling for video operation status...");
-        while (!operation.done) {
-            await new Promise(resolve => setTimeout(resolve, 10000));
-            operation = await ai.operations.getVideosOperation({ operation: operation });
-            console.log("... still generating video.");
-        }
-
-        const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-        if (downloadLink) {
-            console.log("Video generated, fetching video bytes...");
-            const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch video: ${response.statusText}`);
-            }
-            const blob = await response.blob();
-            console.log("Video fetched, creating blob URL.");
-            return URL.createObjectURL(blob);
-        } else {
-             throw new Error("Video generation completed but no download link was provided.");
-        }
+        // Временно возвращаем мок-видео, так как Gemini API отключен
+        console.log("Generating mock video trailer for:", title);
+        return MOCK_PROJECT_VIDEO;
     } catch(error) {
-        console.error("Error generating video trailer with Gemini, falling back to mock video:", error);
+        console.error("Error generating video trailer:", error);
         return MOCK_PROJECT_VIDEO;
     }
 };
@@ -106,39 +55,13 @@ export const summarizeComments = async (comments: Comment[]): Promise<{ sentimen
         return { sentiment: 'N/A', summary: 'Not enough comments to analyze.'};
     }
     
-    const userCommentsText = comments.map(c => `- ${c.text}`).join("\n");
-    const prompt = `Analyze the sentiment and summarize the key themes from these user comments for an impact project.
-    
-    Comments:
-    ${userCommentsText}`;
-    
     try {
-        const ai = getGemini();
-        if (!ai) throw new Error('No Gemini API key');
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        sentiment: {
-                            type: Type.STRING,
-                            description: "A single phrase describing the overall sentiment, e.g., 'Overwhelmingly Positive'."
-                        },
-                        summary: {
-                            type: Type.STRING,
-                            description: "A 2-3 sentence summary of the key themes in the comments."
-                        },
-                    },
-                    required: ["sentiment", "summary"],
-                },
-            },
-        });
-
-        const jsonStr = response.text.trim();
-        return JSON.parse(jsonStr);
+        // Временно возвращаем мок-анализ, так как Gemini API отключен
+        console.log("Generating mock comment summary for", comments.length, "comments");
+        return {
+            sentiment: 'Positive',
+            summary: 'Comments show strong support for this impact project. Backers are excited about the potential positive change in Central Asia.'
+        };
     } catch (error) {
         console.error("Error summarizing comments:", error);
         return fallback;
@@ -414,31 +337,14 @@ export const generateInitialProjects = async (): Promise<Project[]> => {
 
 
 export const generateProjectScores = async (title: string, description: string): Promise<{ anticipationScore: number; impactScore: number; efficiencyScore: number; }> => {
-    const prompt = `As an impact project market analyst, evaluate the following project concept and provide scores from 0-100 for three key metrics.
-
-    Project Title: "${title}"
-    Description: ${description.substring(0, 500)}...`;
     try {
-        const ai = getGemini();
-        if (!ai) throw new Error('No Gemini API key');
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        anticipationScore: { type: Type.NUMBER },
-                        impactScore: { type: Type.NUMBER },
-                        efficiencyScore: { type: Type.NUMBER },
-                    },
-                    required: ["anticipationScore", "impactScore", "efficiencyScore"],
-                },
-            },
-        });
-        const jsonStr = response.text.trim();
-        return JSON.parse(jsonStr);
+        // Временно возвращаем мок-оценки, так как Gemini API отключен
+        console.log("Generating mock project scores for:", title);
+        return { 
+            anticipationScore: 75, 
+            impactScore: 80, 
+            efficiencyScore: 70 
+        };
     } catch (error) {
         console.error("Error generating project scores:", error);
         return { anticipationScore: 60, impactScore: 60, efficiencyScore: 60 };
@@ -446,33 +352,15 @@ export const generateProjectScores = async (title: string, description: string):
 };
 
 export const generateProjectDetailsFromIdea = async (idea: string, creatorName: string): Promise<{title: string, tagline: string, description: string, creatorBio: string}> => {
-     const prompt = `Based on the following project idea and creator name, generate a compelling project title, a short and catchy tagline, a detailed project description, and a short, engaging creator bio (about 1-2 sentences). 
-    The description should be a single string of HTML, using tags like '<h2>', '<h3>', '<p>', '<ul>', and '<li>' for formatting. Do not include markdown syntax.
-    
-    Project Idea: "${idea}"
-    Creator Name: "${creatorName}"`;
     try {
-        const ai = getGemini();
-        if (!ai) throw new Error('No Gemini API key');
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        title: { type: Type.STRING },
-                        tagline: { type: Type.STRING },
-                        description: { type: Type.STRING },
-                        creatorBio: { type: Type.STRING },
-                    },
-                    required: ["title", "tagline", "description", "creatorBio"],
-                },
-            },
-        });
-        const jsonStr = response.text.trim();
-        return JSON.parse(jsonStr);
+        // Временно возвращаем мок-данные, так как Gemini API отключен
+        console.log("Generating mock project details for:", idea);
+        return {
+            title: idea.length > 50 ? idea.substring(0, 50) + "..." : idea,
+            tagline: "Revolutionary impact project for Central Asia",
+            description: `<h2>About This Project</h2><p>${idea}</p><h3>Our Mission</h3><p>Creating positive impact in Central Asia through innovative solutions.</p>`,
+            creatorBio: `${creatorName} is passionate about creating meaningful change in Central Asia.`
+        };
     } catch (error) {
         console.error("Error generating project details:", error);
         return {
@@ -485,44 +373,29 @@ export const generateProjectDetailsFromIdea = async (idea: string, creatorName: 
 };
 
 export const suggestRewards = async (projectTitle: string, projectDescription: string, fundingGoal: number): Promise<Reward[]> => {
-    const prompt = `Based on the project title "${projectTitle}", description, and funding goal of $${fundingGoal}, suggest 3 distinct and appealing reward tiers for an impact project campaign.
-    One should be a premium 'Founder's Pass' by setting isFoundersPass to true.
-    Description: ${projectDescription.substring(0, 300)}...`;
     try {
-        const ai = getGemini();
-        if (!ai) throw new Error('No Gemini API key');
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        rewards: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    title: { type: Type.STRING },
-                                    pledgeAmount: { type: Type.INTEGER },
-                                    description: { type: Type.STRING },
-                                    isFoundersPass: { type: Type.BOOLEAN },
-                                },
-                                required: ["title", "pledgeAmount", "description", "isFoundersPass"],
-                            },
-                        },
-                    },
-                    required: ["rewards"],
-                },
+        // Временно возвращаем мок-награды, так как Gemini API отключен
+        console.log("Generating mock rewards for:", projectTitle);
+        return [
+            {
+                title: "Supporter",
+                pledgeAmount: Math.floor(fundingGoal * 0.1),
+                description: "Thank you for supporting our impact project!",
+                isFoundersPass: false
             },
-        });
-        const responseData = JSON.parse(response.text.trim());
-        if (!responseData.rewards || !Array.isArray(responseData.rewards)) {
-            console.error("AI response for rewards is not in the expected format:", responseData);
-            throw new Error("Invalid data structure for rewards from AI.");
-        }
-        return responseData.rewards;
+            {
+                title: "Backer",
+                pledgeAmount: Math.floor(fundingGoal * 0.25),
+                description: "Get exclusive updates and early access to project results.",
+                isFoundersPass: false
+            },
+            {
+                title: "Founder's Pass",
+                pledgeAmount: Math.floor(fundingGoal * 0.5),
+                description: "Premium supporter with exclusive benefits and recognition.",
+                isFoundersPass: true
+            }
+        ];
     } catch (error) {
         console.error("Error suggesting rewards:", error);
         throw new Error("Could not suggest rewards.");
@@ -530,41 +403,27 @@ export const suggestRewards = async (projectTitle: string, projectDescription: s
 };
 
 export const generateFaqs = async (projectTitle: string, projectDescription: string): Promise<{question: string, answer: string}[]> => {
-    const prompt = `Based on the project title "${projectTitle}" and description, generate 3-4 common and relevant questions a potential backer might have, and provide clear, concise answers for each.
-    Description: ${projectDescription.substring(0, 500)}...`;
     try {
-        const ai = getGemini();
-        if (!ai) throw new Error('No Gemini API key');
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        faqs: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    question: { type: Type.STRING },
-                                    answer: { type: Type.STRING },
-                                },
-                                required: ["question", "answer"],
-                            },
-                        },
-                    },
-                    required: ["faqs"],
-                },
+        // Временно возвращаем мок-FAQ, так как Gemini API отключен
+        console.log("Generating mock FAQs for:", projectTitle);
+        return [
+            {
+                question: "What is the timeline for this project?",
+                answer: "We expect to complete this project within 6-12 months, depending on funding and development progress."
             },
-        });
-        const responseData = JSON.parse(response.text.trim());
-        if (!responseData.faqs || !Array.isArray(responseData.faqs)) {
-            console.error("AI response for faqs is not in the expected format:", responseData);
-            throw new Error("Invalid data structure for faqs from AI.");
-        }
-        return responseData.faqs;
+            {
+                question: "How will my contribution be used?",
+                answer: "Your contribution will directly support the development and implementation of this impact project in Central Asia."
+            },
+            {
+                question: "What happens if the project doesn't reach its goal?",
+                answer: "If we don't reach our funding goal, we'll continue with a scaled-down version of the project using available funds."
+            },
+            {
+                question: "How can I stay updated on progress?",
+                answer: "We'll provide regular updates through our platform and email notifications to all backers."
+            }
+        ];
     } catch (error) {
         console.error("Error generating FAQs:", error);
         throw new Error("Could not generate FAQs.");
@@ -572,38 +431,18 @@ export const generateFaqs = async (projectTitle: string, projectDescription: str
 };
 
 export const analyzeCampaignReadiness = async (projectData: any): Promise<AnalysisResult> => {
-    const prompt = `You are a world-class impact project consultant named 'Launch Partner™'. Analyze the following project data and provide a 'Launch Readiness Score' out of 100 and a list of 3-4 concise, actionable suggestions for improvement.
-    
-    Project Data:
-    - Title: ${projectData.title}
-    - Tagline: ${projectData.tagline}
-    - Description: ${projectData.description.substring(0, 500)}...
-    - Funding Goal: $${projectData.goal}
-    - Rewards: ${projectData.rewards.map((r: Reward) => `${r.title} ($${r.pledgeAmount})`).join(', ')}
-    `;
     try {
-        const ai = getGemini();
-        if (!ai) throw new Error('No Gemini API key');
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        score: { type: Type.INTEGER },
-                        suggestions: {
-                            type: Type.ARRAY,
-                            items: { type: Type.STRING },
-                        },
-                    },
-                    required: ["score", "suggestions"],
-                },
-            },
-        });
-        const jsonStr = response.text.trim();
-        return JSON.parse(jsonStr);
+        // Временно возвращаем мок-анализ, так как Gemini API отключен
+        console.log("Generating mock campaign analysis for:", projectData.title);
+        return {
+            score: 75,
+            suggestions: [
+                "Add more detailed project timeline and milestones",
+                "Include testimonials or endorsements from experts",
+                "Create a compelling video trailer to showcase your project",
+                "Consider adding stretch goals to engage more backers"
+            ]
+        };
     } catch (error) {
         console.error("Error analyzing campaign readiness:", error);
         throw new Error("Failed to analyze campaign readiness.");
@@ -611,22 +450,6 @@ export const analyzeCampaignReadiness = async (projectData: any): Promise<Analys
 };
 
 export const streamChatResponse = async (messages: { role: string; content: string }[]) => {
-    const ai = getGemini();
-    if (!ai) throw new Error('No Gemini API key');
-    // Gemini uses 'systemInstruction' for system prompts.
-    const systemInstruction = messages.find(m => m.role === 'system')?.content;
-
-    // Gemini uses 'model' and 'user' roles. OpenAI uses 'assistant' and 'user'.
-    const contents = messages
-        .filter(m => m.role !== 'system')
-        .map(m => ({
-            role: m.role === 'assistant' ? 'model' : 'user', // Map 'assistant' to 'model'. Assume others are 'user'.
-            parts: [{ text: m.content }],
-        }));
-
-    return ai.models.generateContentStream({
-        model: 'gemini-2.5-flash',
-        contents,
-        ...(systemInstruction && { config: { systemInstruction } }),
-    });
+    // Эта функция больше не используется, так как мы переключились на OpenAI
+    throw new Error('streamChatResponse is deprecated. Use OpenAI service instead.');
 };
