@@ -98,7 +98,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ projects, categories, onSelec
     return (
         <div>
             {/* Hero Section */}
-            <div className="relative h-screen min-h-[700px] flex items-center justify-center text-center text-white overflow-hidden -mt-20">
+            <div className="relative h-screen min-h-[800px] flex items-center justify-center text-center text-white overflow-hidden -mt-20">
                 {/* Animated Background */}
                 <div className="absolute inset-0 flex flex-col justify-center gap-8 pointer-events-auto">
                    {projectRows.map((row, rowIndex) => {
@@ -123,9 +123,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ projects, categories, onSelec
                 </div>
                 
                 {/* Gradient Overlay for Readability */}
-                <div className="absolute inset-0 bg-gradient-radial from-black/10 via-black/60 to-black/95 z-10 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-radial from-black/5 via-black/40 to-black/80 z-10 pointer-events-none" />
 
-                <div className="relative z-20 px-4">
+                <div className="relative z-20 px-4 py-8">
                     <motion.h1 
                         initial={{ y: 30, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
