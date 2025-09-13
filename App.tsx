@@ -80,8 +80,10 @@ const AppContent: React.FC = () => {
   const [fundedProjectInfo, setFundedProjectInfo] = useState<{ title: string; amount: number; isFounder: boolean } | null>(null);
   const { t } = useLanguage();
 
-  // URL routing
+  // URL routing - только после загрузки проектов
   useEffect(() => {
+    if (projects.length === 0) return; // Не обрабатываем URL пока проекты не загружены
+    
     const handleURLChange = () => {
       const path = window.location.pathname;
       const searchParams = new URLSearchParams(window.location.search);
@@ -161,21 +163,6 @@ const AppContent: React.FC = () => {
     fetchInitialData();
   }, [fetchInitialData]);
 
-  // Handle URL routing after projects are loaded
-  useEffect(() => {
-    if (projects.length > 0) {
-      const path = window.location.pathname;
-      if (path.startsWith('/proj-')) {
-        const projectId = path.substring(1); // убираем первый слеш
-        const project = projects.find(p => p.id === projectId);
-        if (project) {
-          console.log('Projects loaded, setting project:', project.title);
-          setSelectedProject(project);
-          setView(View.ProjectDetail);
-        }
-      }
-    }
-  }, [projects]);
   
   useEffect(() => {
     if (chatMessages.length === 0) {
