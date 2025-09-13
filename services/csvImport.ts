@@ -1,6 +1,6 @@
 import type { Project, MediaItem, TeamMember, SocialLink, Reward, Comment, Backer } from '../types';
 
-const CSV_URL = (import.meta as any).env?.VITE_PROJECTS_CSV_URL || '/projects.csv';
+const CSV_URL = (import.meta as any).env?.VITE_PROJECTS_CSV_URL || 'https://docs.google.com/spreadsheets/d/1YOUR_SHEET_ID/export?format=csv&gid=0';
 
 // Generate mock data for CSV projects
 function generateMockComments(projectTitle: string): Comment[] {
