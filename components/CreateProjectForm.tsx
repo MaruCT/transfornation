@@ -323,7 +323,20 @@ const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ onAddProject, onB
                                     {formData.media.find(m => m.type === 'video')?.url && (
                                         <div>
                                             <p className="text-sm font-medium text-gray-300 mb-2">{t('createProject.videoTrailerPreview')}</p>
-                                            <video src={formData.media.find(m => m.type === 'video')?.url} controls className="rounded-lg w-full aspect-video border border-white/10" />
+                                            {formData.media.find(m => m.type === 'video')?.url.includes('drive.google.com') ? (
+                                                <iframe 
+                                                    src={formData.media.find(m => m.type === 'video')?.url} 
+                                                    className="rounded-lg w-full aspect-video border border-white/10"
+                                                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                                                    allowFullScreen
+                                                />
+                                            ) : (
+                                                <video 
+                                                    src={formData.media.find(m => m.type === 'video')?.url} 
+                                                    controls 
+                                                    className="rounded-lg w-full aspect-video border border-white/10" 
+                                                />
+                                            )}
                                         </div>
                                     )}
                                 </div>

@@ -224,6 +224,22 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, 
                                             </button>
                                         </div>
                                     </div>
+                                ) : activeMedia.url.includes('drive.google.com') ? (
+                                    <iframe
+                                        src={activeMedia.url}
+                                        className="w-full h-full border-0"
+                                        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                                        allowFullScreen
+                                        onLoad={() => {
+                                            console.log('Google Drive iframe loaded successfully:', activeMedia.url);
+                                            setIsMediaLoading(false);
+                                        }}
+                                        onError={() => {
+                                            console.error('Google Drive iframe failed to load:', activeMedia.url);
+                                            setIsMediaLoading(false);
+                                            setVideoError(true);
+                                        }}
+                                    />
                                 ) : (
                                     <video
                                         src={activeMedia.url}

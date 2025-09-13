@@ -305,12 +305,12 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
     const s = fixHttpToHttps(url).trim();
     console.log('Normalizing Drive video URL:', s);
     
-    // For Google Drive videos, we need to use the embed format for web playback
+    // For Google Drive videos, we need to use the embed format for iframe playback
     // Match file id in typical Drive file URL
     let m = s.match(/https:\/\/drive\.google\.com\/file\/d\/([^/?#]+)(?:[/?#]|$)/);
     if (m) {
       const embedUrl = `https://drive.google.com/file/d/${m[1]}/preview`;
-      console.log('Normalized Drive view URL to embed:', embedUrl);
+      console.log('Normalized Drive view URL to iframe embed:', embedUrl);
       return embedUrl;
     }
     
@@ -318,7 +318,15 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
     m = s.match(/https:\/\/drive\.google\.com\/open\?[^#]*\bid=([^&#]+)/);
     if (m) {
       const embedUrl = `https://drive.google.com/file/d/${decodeURIComponent(m[1])}/preview`;
-      console.log('Normalized Drive open URL to embed:', embedUrl);
+      console.log('Normalized Drive open URL to iframe embed:', embedUrl);
+      return embedUrl;
+    }
+    
+    // uc?export=download&id=... (already processed)
+    m = s.match(/https:\/\/drive\.google\.com\/uc\?export=download&id=([^&]+)/);
+    if (m) {
+      const embedUrl = `https://drive.google.com/file/d/${decodeURIComponent(m[1])}/preview`;
+      console.log('Normalized Drive download URL to iframe embed:', embedUrl);
       return embedUrl;
     }
     
@@ -326,13 +334,13 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
     m = s.match(/\bid=([^&#]+)/);
     if (m && /drive\.google\.com/.test(s)) {
       const embedUrl = `https://drive.google.com/file/d/${decodeURIComponent(m[1])}/preview`;
-      console.log('Normalized Drive ID URL to embed:', embedUrl);
+      console.log('Normalized Drive ID URL to iframe embed:', embedUrl);
       return embedUrl;
     }
     
     // If it's already an embed URL, keep it
     if (/drive\.google\.com\/file\/d\/.*\/preview/.test(s)) {
-      console.log('Already an embed URL, keeping as-is:', s);
+      console.log('Already an iframe embed URL, keeping as-is:', s);
       return s;
     }
     
