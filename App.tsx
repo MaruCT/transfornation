@@ -15,7 +15,8 @@ import Profile from './components/Profile';
 import ContestView from './components/ContestView';
 import LandingPage from './components/LandingPage';
 import EventDetail from './components/EventDetail';
-import { generateInitialProjects, generateProjectImage, summarizeComments, generateFoundersPassImage, streamChatResponse, generateProjectScores } from './services/geminiService';
+import { generateInitialProjects, generateProjectImage, summarizeComments, generateFoundersPassImage, generateProjectScores } from './services/geminiService';
+import { chatWithOpenAI } from './services/openaiService';
 import { mockBlogPosts, mockEvents } from './services/mockData';
 import Confetti from './components/Confetti';
 import SuccessModal from './components/SuccessModal';
@@ -334,44 +335,34 @@ const AppContent: React.FC = () => {
 
         try {
             const systemPrompt = getSystemPrompt(projects);
-            // geminiService expects 'user', 'assistant', and 'system' roles.
+            // OpenAI expects 'user', 'assistant', and 'system' roles.
             // Our internal state uses 'user' and 'model'. We map 'model' to 'assistant' for the service.
             const history = newMessages.map(m => ({ role: m.role === 'model' ? 'assistant' : m.role, content: m.text }));
             const messagesToApi = [{ role: 'system', content: systemPrompt }, ...history];
             
-            const stream = await streamChatResponse(messagesToApi as any);
+            const responseText = await chatWithOpenAI(messagesToApi as any);
 
-            let responseText = '';
             let projectFound: Project | undefined = undefined;
-
-            for await (const chunk of stream) {
-                // The chunk is a GenerateContentResponse object. We use its text property.
-                const chunkText = chunk.text;
-                if (chunkText) {
-                    responseText += chunkText;
-                    
-                    if (!projectFound) {
-                        const projectTagMatch = responseText.match(/\[PROJECT:([^\]]+)\]/);
-                        if (projectTagMatch) {
-                            const projectId = projectTagMatch[1];
-                            projectFound = projects.find(p => p.id === projectId);
-                        }
-                    }
-
-                    const displayText = responseText.replace(/\[PROJECT:([^\]]+)\]\s*/, '');
-
-                    setChatMessages(prev => prev.map(msg => {
-                        if (msg.id === aiMessagePlaceholderId) {
-                            const updatedMsg: ChatMessage = { ...msg, text: displayText };
-                            if (projectFound) {
-                                updatedMsg.project = projectFound;
-                            }
-                            return updatedMsg;
-                        }
-                        return msg;
-                    }));
-                }
+            
+            // Check for project reference in response
+            const projectTagMatch = responseText.match(/\[PROJECT:([^\]]+)\]/);
+            if (projectTagMatch) {
+                const projectId = projectTagMatch[1];
+                projectFound = projects.find(p => p.id === projectId);
             }
+
+            const displayText = responseText.replace(/\[PROJECT:([^\]]+)\]\s*/, '');
+
+            setChatMessages(prev => prev.map(msg => {
+                if (msg.id === aiMessagePlaceholderId) {
+                    const updatedMsg: ChatMessage = { ...msg, text: displayText };
+                    if (projectFound) {
+                        updatedMsg.project = projectFound;
+                    }
+                    return updatedMsg;
+                }
+                return msg;
+            }));
         } catch (error) {
             console.error("Error sending message to AI:", error);
             setChatMessages(prev => prev.map(msg => 
