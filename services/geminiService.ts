@@ -107,7 +107,7 @@ export const summarizeComments = async (comments: Comment[]): Promise<{ sentimen
     }
     
     const userCommentsText = comments.map(c => `- ${c.text}`).join("\n");
-    const prompt = `Analyze the sentiment and summarize the key themes from these user comments for a crowdfunding project.
+    const prompt = `Analyze the sentiment and summarize the key themes from these user comments for an impact project.
     
     Comments:
     ${userCommentsText}`;
@@ -159,9 +159,9 @@ export const generateInitialProjects = async (): Promise<Project[]> => {
             id: 'mock-proj-1',
             creatorId: 'mock-creator-1',
             title: "Aura Smart Ring: The Future of Wearable Tech",
-            creator: "Innovate Labs",
+            creator: "Transfornation Labs",
             creatorBio: "A team of engineers and designers passionate about creating technology that enhances human potential.",
-            creatorAvatar: `https://i.pravatar.cc/150?u=innovate_labs`,
+            creatorAvatar: `https://i.pravatar.cc/150?u=transfornation_labs`,
             tagline: "Monitor your health, sleep, and activity with a sleek, minimalist smart ring.",
             description: `<h2>Meet Aura</h2><p>Aura is more than just a piece of jewelry. It's a powerful wellness tracker that seamlessly integrates into your life. We've packed state-of-the-art sensors into a tiny, comfortable, and stylish ring that you'll never want to take off.</p><h3>Key Features:</h3><ul><li>Advanced Sleep Tracking</li><li>Heart Rate & HRV Monitoring</li><li>Activity & Calorie Tracking</li><li>Water-resistant design</li></ul>`,
             category: 'Technology',
@@ -177,8 +177,8 @@ export const generateInitialProjects = async (): Promise<Project[]> => {
                 { name: 'Ben Carter', role: 'Product Designer', avatar: 'https://i.pravatar.cc/150?u=ben_carter' },
             ],
             socialLinks: [
-                { platform: 'twitter', url: 'https://twitter.com/innovatehub' },
-                { platform: 'website', url: 'https://innovatehub.dev' },
+                { platform: 'twitter', url: 'https://twitter.com/transfornation' },
+                { platform: 'website', url: 'https://transfornation.dev' },
             ],
             videoGenerationState: 'done',
             goal: 50000,
@@ -409,7 +409,7 @@ export const generateInitialProjects = async (): Promise<Project[]> => {
 
 
 export const generateProjectScores = async (title: string, description: string): Promise<{ anticipationScore: number; impactScore: number; efficiencyScore: number; }> => {
-    const prompt = `As a crowdfunding market analyst, evaluate the following project concept and provide scores from 0-100 for three key metrics.
+    const prompt = `As an impact project market analyst, evaluate the following project concept and provide scores from 0-100 for three key metrics.
 
     Project Title: "${title}"
     Description: ${description.substring(0, 500)}...`;
@@ -480,7 +480,7 @@ export const generateProjectDetailsFromIdea = async (idea: string, creatorName: 
 };
 
 export const suggestRewards = async (projectTitle: string, projectDescription: string, fundingGoal: number): Promise<Reward[]> => {
-    const prompt = `Based on the project title "${projectTitle}", description, and funding goal of $${fundingGoal}, suggest 3 distinct and appealing reward tiers for a crowdfunding campaign.
+    const prompt = `Based on the project title "${projectTitle}", description, and funding goal of $${fundingGoal}, suggest 3 distinct and appealing reward tiers for an impact project campaign.
     One should be a premium 'Founder's Pass' by setting isFoundersPass to true.
     Description: ${projectDescription.substring(0, 300)}...`;
     try {
@@ -528,6 +528,8 @@ export const generateFaqs = async (projectTitle: string, projectDescription: str
     const prompt = `Based on the project title "${projectTitle}" and description, generate 3-4 common and relevant questions a potential backer might have, and provide clear, concise answers for each.
     Description: ${projectDescription.substring(0, 500)}...`;
     try {
+        const ai = getGemini();
+        if (!ai) throw new Error('No Gemini API key');
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
@@ -565,7 +567,7 @@ export const generateFaqs = async (projectTitle: string, projectDescription: str
 };
 
 export const analyzeCampaignReadiness = async (projectData: any): Promise<AnalysisResult> => {
-    const prompt = `You are a world-class crowdfunding campaign consultant named 'Launch Partner™'. Analyze the following project data and provide a 'Launch Readiness Score' out of 100 and a list of 3-4 concise, actionable suggestions for improvement.
+    const prompt = `You are a world-class impact project consultant named 'Launch Partner™'. Analyze the following project data and provide a 'Launch Readiness Score' out of 100 and a list of 3-4 concise, actionable suggestions for improvement.
     
     Project Data:
     - Title: ${projectData.title}
@@ -575,6 +577,8 @@ export const analyzeCampaignReadiness = async (projectData: any): Promise<Analys
     - Rewards: ${projectData.rewards.map((r: Reward) => `${r.title} ($${r.pledgeAmount})`).join(', ')}
     `;
     try {
+        const ai = getGemini();
+        if (!ai) throw new Error('No Gemini API key');
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,

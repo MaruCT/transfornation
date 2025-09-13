@@ -24,13 +24,13 @@ export const mockBlogPosts: BlogPost[] = [
 export const mockEvents: Event[] = [
     {
         id: 'event-1',
-        title: 'InnovateHub Launch Summit 2024',
+        title: 'Transfornation Launch Summit 2024',
         date: 'October 26, 2024',
         location: 'Virtual Event',
         imageUrl: 'https://picsum.photos/seed/event_summit/600/400',
-        description: 'Join us for the official launch of InnovateHub! We\'re bringing together creators, backers, and industry leaders for a day of inspiring talks, project demos, and networking. Discover the future of crowdfunding and be the first to see our most anticipated projects go live.',
+        description: 'Join us for the official launch of Transfornation! We\'re bringing together creators, backers, and industry leaders for a day of inspiring talks, project demos, and networking. Discover the future of impact projects in Central Asia and be the first to see our most anticipated projects go live.',
         speakers: [
-            { name: 'Dr. Evelyn Reed', title: 'CEO, Innovate Labs', avatar: 'https://i.pravatar.cc/150?u=evelyn_reed' },
+            { name: 'Dr. Evelyn Reed', title: 'CEO, Transfornation Labs', avatar: 'https://i.pravatar.cc/150?u=evelyn_reed' },
             { name: 'Kenji Tanaka', title: 'Lead Designer, Chronoscape', avatar: 'https://i.pravatar.cc/150?u=kenji_tanaka' },
             { name: 'Sophia Chen', title: 'Artist & Creator, Luminance', avatar: 'https://i.pravatar.cc/150?u=sophia_chen' },
         ],
@@ -41,9 +41,9 @@ export const mockEvents: Event[] = [
         date: 'November 15, 2024',
         location: 'Online Workshop',
         imageUrl: 'https://picsum.photos/seed/event_workshop/600/400',
-        description: 'Ready to launch your own project? This hands-on workshop will guide you through the essentials of creating a successful crowdfunding campaign, from storytelling and video production to marketing and community building. Learn from creators who have successfully funded their dreams on InnovateHub.',
+        description: 'Ready to launch your own impact project? This hands-on workshop will guide you through the essentials of creating a successful impact project campaign, from storytelling and video production to marketing and community building. Learn from creators who have successfully funded their dreams on Transfornation.',
         speakers: [
-            { name: 'Alex Carter', title: 'Crowdfunding Strategist', avatar: 'https://i.pravatar.cc/150?u=alex_carter' },
+            { name: 'Alex Carter', title: 'Impact Project Strategist', avatar: 'https://i.pravatar.cc/150?u=alex_carter' },
             { name: 'Maria Rodriguez', title: 'Founder, Ergo Designs', avatar: 'https://i.pravatar.cc/150?u=maria_rodriguez' },
         ],
     },

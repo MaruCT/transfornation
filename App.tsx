@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion, Transition } from 'framer-motion';
 import type { Project, Backer, ChatMessage, User, Pledge, Reward, MediaItem, Event, BlogPost, TeamMember, SocialLink } from './types';
 import { View } from './types';
@@ -15,13 +15,11 @@ import Profile from './components/Profile';
 import ContestView from './components/ContestView';
 import LandingPage from './components/LandingPage';
 import EventDetail from './components/EventDetail';
-import { generateInitialProjects, generateProjectImage, summarizeComments, generateFoundersPassImage, generateProjectScores } from './services/geminiService';
-import { chatWithOpenAI } from './services/openaiService';
+import { generateInitialProjects, generateProjectImage, summarizeComments, generateFoundersPassImage, streamChatResponse, generateProjectScores } from './services/geminiService';
 import { mockBlogPosts, mockEvents } from './services/mockData';
 import Confetti from './components/Confetti';
 import SuccessModal from './components/SuccessModal';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
-import { useProjectTranslation } from './hooks/useProjectTranslation';
 
 
 const pageVariants = {
@@ -42,76 +40,12 @@ const MOCK_USER: User = {
   avatar: 'https://i.pravatar.cc/150?u=alex_j',
 };
 
-// Temporary helpers to seed random comments and avatars/names
-const RANDOM_NAMES = ['Aruzhan', 'Damir', 'Amina', 'Maksat', 'Diana', 'Nursultan', 'Alina', 'Ilyas', 'Aigerim', 'Timur', 'Madina', 'Ruslan', 'Yernar', 'Anel', 'Bota', 'Ayan', 'Sultan', 'Dana', 'Elina'];
-const RANDOM_COMMENTS = [
-  'Nice project! Looking forward to updates.',
-  'Great concept. Wishing you success!',
-  'Impressive work from the team.',
-  'Looks promising, keep it up!',
-  'Clean idea and solid execution.',
-  'Following this with interest.',
-  'Well done! Excited to see more.',
-  'Good luck with the launch!',
-  'This could be big. Subscribed.',
-  'Solid direction. Cheering for you!',
-  'Neat! Can’t wait to try it.',
-  'Great progress so far.',
-];
-const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-const randomItem = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
-const randomAvatarUrl = (seed: string) => `https://i.pravatar.cc/150?u=${encodeURIComponent(seed)}`;
-const makeRandomComments = (count: number) => {
-  // pick unique comments by shuffling
-  const shuffledComments = [...RANDOM_COMMENTS].sort(() => Math.random() - 0.5);
-  const shuffledNames = [...RANDOM_NAMES].sort(() => Math.random() - 0.5);
-  const n = Math.min(count, shuffledComments.length);
-  return Array.from({ length: n }).map((_, idx) => {
-    const name = shuffledNames[idx % shuffledNames.length];
-    const daysAgo = randomInt(0, 20);
-    const date = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    return {
-      author: name,
-      avatar: randomAvatarUrl(`${name}-${idx}-${Math.random().toString(36).slice(2)}`),
-      text: shuffledComments[idx],
-      date,
-      type: 'user' as const,
-    };
-  });
-};
-const seedProjectsWithRandomComments = (projects: Project[]): Project[] => {
-  return projects.map(p => ({
-    ...p,
-    comments: (p.comments && p.comments.length > 0) ? p.comments : makeRandomComments(randomInt(2, 6))
-  }));
-}
-
-const seedProjectsWithRandomStats = (projects: Project[]): Project[] => {
-  return projects.map(p => {
-    const safeGoal = p.goal && p.goal > 0 ? p.goal : randomInt(5000, 50000);
-    const pledged = (p.pledged && p.pledged > 0) ? p.pledged : randomInt(Math.floor(safeGoal * 0.05), Math.floor(safeGoal * 0.6));
-    const backers = (p.backers && p.backers > 0) ? p.backers : randomInt(10, 800);
-    const anticipationScore = p.anticipationScore && p.anticipationScore > 0 ? p.anticipationScore : randomInt(60, 90);
-    const impactScore = p.impactScore && p.impactScore > 0 ? p.impactScore : randomInt(55, 88);
-    const efficiencyScore = p.efficiencyScore && p.efficiencyScore > 0 ? p.efficiencyScore : randomInt(58, 92);
-    return {
-      ...p,
-      goal: safeGoal,
-      pledged,
-      backers,
-      anticipationScore,
-      impactScore,
-      efficiencyScore,
-    };
-  });
-};
-
 const getSystemPrompt = (projects: Project[]) => {
     const projectContext = projects.map(p => 
         `ID: ${p.id}\nProject: "${p.title}" (Category: ${p.category})\nTagline: ${p.tagline}\nGoal: $${p.goal}, Pledged: $${p.pledged}\n`
     ).join('\n---\n');
 
-    return `You are Spark, a friendly and intelligent AI assistant for InnovateHub, a crowdfunding platform. Your goal is to help users discover interesting projects, assist creators with ideas, and provide insights into crowdfunding trends. You are conversational and encouraging.
+    return `You are Spark, a friendly and intelligent AI assistant for Transfornation, a platform for supporting Impact projects in Central Asia. Your goal is to help users discover interesting projects, assist creators with ideas, and provide insights into impact project trends. You are conversational and encouraging.
 
     Here is the current list of projects on the platform. Use this information to provide specific and helpful answers. Do not make up projects.
 
@@ -127,11 +61,6 @@ const AppContent: React.FC = () => {
   const [view, setView] = useState<View>(View.Landing);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  
-  // Update ref when selectedProject changes
-  useEffect(() => {
-    selectedProjectRef.current = selectedProject;
-  }, [selectedProject]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -148,12 +77,7 @@ const AppContent: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   
   const [fundedProjectInfo, setFundedProjectInfo] = useState<{ title: string; amount: number; isFounder: boolean } | null>(null);
-  const { t, language } = useLanguage();
-  const { getTranslatedContent, translateProjectContent, isTranslating } = useProjectTranslation();
-  const prevLanguageRef = useRef(language);
-  const selectedProjectRef = useRef<Project | null>(null);
-  const [translationUpdateKey, setTranslationUpdateKey] = useState(0); // Force re-render after translation
-  const [isContentReady, setIsContentReady] = useState(false); // Block content until translation is ready
+  const { t } = useLanguage();
 
 
   const categories = useMemo(() => Array.from(new Set(projects.map(p => p.category))), [projects]);
@@ -162,74 +86,13 @@ const AppContent: React.FC = () => {
     return projects.filter(p => p.category === selectedCategory);
   }, [projects, selectedCategory]);
 
-  // Get translated project content - SIMPLIFIED
-  const getTranslatedProject = useCallback((project: Project): Project => {
-    // For Russian, always return original content
-    if (language === 'ru') {
-      return project;
-    }
-    
-    const translatedContent = getTranslatedContent(project, language);
-    
-    if (!translatedContent) {
-      return project;
-    }
-    
-    return {
-      ...project,
-      title: translatedContent.title,
-      tagline: translatedContent.tagline,
-      description: translatedContent.description,
-      problems: translatedContent.problems,
-      creatorBio: translatedContent.creatorBio,
-      faq: translatedContent.faq,
-      rewards: project.rewards.map((reward, index) => ({
-        ...reward,
-        title: translatedContent.rewards[index]?.title || reward.title,
-        description: translatedContent.rewards[index]?.description || reward.description
-      }))
-    };
-  }, [getTranslatedContent, language]);
-
-
-  // Auto-translate project when language changes - SIMPLIFIED
-  useEffect(() => {
-    const currentProject = selectedProjectRef.current;
-    if (currentProject && language !== prevLanguageRef.current) {
-      // Always use getTranslatedProject which handles Russian automatically
-      const translatedProject = getTranslatedProject(currentProject);
-      setSelectedProject(translatedProject);
-      setIsContentReady(true);
-      setTranslationUpdateKey(prev => prev + 1);
-      
-      // For non-Russian languages, start translation in background if needed
-      if (language !== 'ru') {
-        const cachedTranslation = getTranslatedContent(currentProject, language);
-        if (!cachedTranslation) {
-          translateProjectContent(currentProject, language).then((translation) => {
-            if (translation) {
-              const updatedProject = getTranslatedProject(currentProject);
-              setSelectedProject(updatedProject);
-              setTranslationUpdateKey(prev => prev + 1);
-            }
-          }).catch((error) => {
-            console.error('Translation failed:', error);
-          });
-        }
-      }
-    }
-    prevLanguageRef.current = language;
-  }, [language, getTranslatedProject, getTranslatedContent, translateProjectContent]);
-
 
   const fetchInitialData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const initialProjects = await generateInitialProjects();
-      const withStats = seedProjectsWithRandomStats(initialProjects);
-      const withComments = seedProjectsWithRandomComments(withStats);
-      setProjects(withComments);
+      setProjects(initialProjects);
       setBlogPosts(mockBlogPosts);
       setEvents(mockEvents);
     } catch (e) {
@@ -249,50 +112,13 @@ const AppContent: React.FC = () => {
         setChatMessages([{
             id: 'init-spark',
             role: 'model',
-            text: "Hello! I'm Spark, your AI assistant for InnovateHub. How can I help you discover, create, or learn about projects today?"
+            text: "Hello! I'm Spark, your AI assistant for Transfornation. How can I help you discover, create, or learn about impact projects today?"
         }]);
     }
   }, []);
 
-  // Открываем проект по URL (?p=ID) после загрузки проектов - SIMPLIFIED
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const slug = params.get('s');
-      const pid = params.get('p');
-      if ((slug || pid) && projects.length > 0 && !selectedProject) {
-        const proj = slug ? projects.find(p => p.slug === slug) : projects.find(p => p.id === pid!);
-        if (proj) {
-          setView(View.ProjectDetail);
-          const translatedProject = getTranslatedProject(proj);
-          setSelectedProject(translatedProject);
-          setIsContentReady(true);
-          setTranslationUpdateKey(prev => prev + 1);
-          
-          // For non-Russian languages, start translation in background if needed
-          if (language !== 'ru') {
-            const cachedTranslation = getTranslatedContent(proj, language);
-            if (!cachedTranslation) {
-              translateProjectContent(proj, language).then((translation) => {
-                if (translation) {
-                  const updatedProject = getTranslatedProject(proj);
-                  setSelectedProject(updatedProject);
-                  setTranslationUpdateKey(prev => prev + 1);
-                }
-              }).catch((error) => {
-                console.error('Translation failed:', error);
-              });
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error loading project from URL:', error);
-    }
-  }, [projects, language, getTranslatedProject, getTranslatedContent, translateProjectContent]);
 
-
-  useEffect(() => {
+   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
@@ -304,42 +130,9 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleSelectProject = (project: Project) => {
-    // Обновляем URL для пермалинка ?p=ID или ?s=slug
-    try {
-      const url = new URL(window.location.href);
-      if (project.slug) {
-        url.searchParams.delete('p');
-        url.searchParams.set('s', project.slug);
-      } else {
-        url.searchParams.delete('s');
-        url.searchParams.set('p', project.id);
-      }
-      window.history.pushState({ p: project.id }, '', url.toString());
-    } catch {}
-    
-    // Set view and project - SIMPLIFIED
+    setSelectedProject(project);
     setView(View.ProjectDetail);
-    const translatedProject = getTranslatedProject(project);
-    setSelectedProject(translatedProject);
-    setIsContentReady(true);
-    setTranslationUpdateKey(prev => prev + 1);
     window.scrollTo(0,0);
-    
-    // For non-Russian languages, start translation in background if needed
-    if (language !== 'ru') {
-      const cachedTranslation = getTranslatedContent(project, language);
-      if (!cachedTranslation) {
-        translateProjectContent(project, language).then((translation) => {
-          if (translation) {
-            const updatedProject = getTranslatedProject(project);
-            setSelectedProject(updatedProject);
-            setTranslationUpdateKey(prev => prev + 1);
-          }
-        }).catch((error) => {
-          console.error('Translation failed:', error);
-        });
-      }
-    }
   };
   
   const handleSelectEvent = (event: Event) => {
@@ -352,15 +145,6 @@ const AppContent: React.FC = () => {
     if (newView === View.Home || newView === View.Landing) {
         setSelectedProject(null);
         setSelectedEvent(null);
-        setTranslationUpdateKey(0); // Reset translation key
-        setIsContentReady(false); // Reset content ready state
-        // Чистим параметры из URL при выходе из карточки
-        try {
-          const url = new URL(window.location.href);
-          url.searchParams.delete('p');
-          url.searchParams.delete('s');
-          window.history.pushState({}, '', url.pathname + (url.search ? '?' + url.searchParams.toString() : ''));
-        } catch {}
     }
     if (newView === View.CreateProject && !currentUser) {
         alert("Please log in to create a project.");
@@ -371,7 +155,6 @@ const AppContent: React.FC = () => {
         return;
     }
     setView(newView);
-    window.scrollTo(0,0);
   }
   
   const handleSelectCategoryAndNavigate = (category: string) => {
@@ -418,7 +201,7 @@ const AppContent: React.FC = () => {
     }
 
 
-    const seededStats = seedProjectsWithRandomStats([{
+    const newProject: Project = {
       ...newProjectData,
       id: new Date().toISOString(),
       creatorId: currentUser.id,
@@ -427,7 +210,6 @@ const AppContent: React.FC = () => {
       media: finalMedia,
       videoGenerationState: finalMedia.some(m => m.type === 'video') ? 'done' : 'none',
       fundingVelocity: 'stable',
-      comments: makeRandomComments(randomInt(2, 5)),
       commentSummary: { sentiment: 'N/A', summary: 'No comments yet.'},
       backersList: [],
       favoritedBy: [],
@@ -437,8 +219,7 @@ const AppContent: React.FC = () => {
         { milestone: 'Funding Goal', description: 'Reach the funding goal to bring this project to life.', status: 'in_progress' },
         { milestone: 'Production', description: 'Begin manufacturing and development.', status: 'planned' }
       ]
-    }])[0];
-    const newProject: Project = seededStats;
+    };
     setProjects(prevProjects => [newProject, ...prevProjects]);
     window.scrollTo(0,0);
   };
@@ -553,24 +334,44 @@ const AppContent: React.FC = () => {
 
         try {
             const systemPrompt = getSystemPrompt(projects);
+            // geminiService expects 'user', 'assistant', and 'system' roles.
+            // Our internal state uses 'user' and 'model'. We map 'model' to 'assistant' for the service.
             const history = newMessages.map(m => ({ role: m.role === 'model' ? 'assistant' : m.role, content: m.text }));
-            const messagesToApi = [{ role: 'system', content: systemPrompt }, ...history] as any;
+            const messagesToApi = [{ role: 'system', content: systemPrompt }, ...history];
+            
+            const stream = await streamChatResponse(messagesToApi as any);
 
-            const fullText = await chatWithOpenAI(messagesToApi);
-
+            let responseText = '';
             let projectFound: Project | undefined = undefined;
-            const projectTagMatch = fullText.match(/\[PROJECT:([^\]]+)\]/);
-            if (projectTagMatch) {
-              const projectId = projectTagMatch[1];
-              projectFound = projects.find(p => p.id === projectId);
-            }
 
-            const displayText = fullText.replace(/\[PROJECT:([^\]]+)\]\s*/, '');
-            setChatMessages(prev => prev.map(msg => (
-              msg.id === aiMessagePlaceholderId 
-                ? { ...msg, text: displayText, project: projectFound || msg.project } 
-                : msg
-            )));
+            for await (const chunk of stream) {
+                // The chunk is a GenerateContentResponse object. We use its text property.
+                const chunkText = chunk.text;
+                if (chunkText) {
+                    responseText += chunkText;
+                    
+                    if (!projectFound) {
+                        const projectTagMatch = responseText.match(/\[PROJECT:([^\]]+)\]/);
+                        if (projectTagMatch) {
+                            const projectId = projectTagMatch[1];
+                            projectFound = projects.find(p => p.id === projectId);
+                        }
+                    }
+
+                    const displayText = responseText.replace(/\[PROJECT:([^\]]+)\]\s*/, '');
+
+                    setChatMessages(prev => prev.map(msg => {
+                        if (msg.id === aiMessagePlaceholderId) {
+                            const updatedMsg: ChatMessage = { ...msg, text: displayText };
+                            if (projectFound) {
+                                updatedMsg.project = projectFound;
+                            }
+                            return updatedMsg;
+                        }
+                        return msg;
+                    }));
+                }
+            }
         } catch (error) {
             console.error("Error sending message to AI:", error);
             setChatMessages(prev => prev.map(msg => 
@@ -595,30 +396,13 @@ const AppContent: React.FC = () => {
 
     switch (view) {
       case View.ProjectDetail:
-        if (!selectedProject) return null;
-        
-        // Show loading screen until content is ready
-        if (!isContentReady) {
-          return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <h2 className="text-2xl font-bold text-white mb-2">Preparing content...</h2>
-                <p className="text-gray-300">Translating project content to {language === 'en' ? 'English' : language === 'zh' ? 'Chinese' : 'Russian'}</p>
-              </div>
-            </div>
-          );
-        }
-        
-        return <ProjectDetail 
-                  key={`${selectedProject.id}-${translationUpdateKey}`}
-                  project={selectedProject} 
-                  onBack={() => handleSetView(View.Home)} 
-                  onFund={handleFundProject} 
-                  currentUser={currentUser}
-                  isTranslating={isTranslating(selectedProject.id)}
-                  onToggleFavorite={handleToggleFavorite}
-                />;
+        return selectedProject && <ProjectDetail 
+                                    project={selectedProject} 
+                                    onBack={() => handleSetView(View.Home)} 
+                                    onFund={handleFundProject} 
+                                    currentUser={currentUser}
+                                    onToggleFavorite={handleToggleFavorite}
+                                  />;
       case View.EventDetail:
         return selectedEvent && <EventDetail 
                                   event={selectedEvent}

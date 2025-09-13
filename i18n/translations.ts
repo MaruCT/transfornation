@@ -10,11 +10,11 @@ export const translations: any = {
       logout: "Logout",
     },
     footer: {
-      copyright: "InnovateHub. All rights reserved.",
+      copyright: "Transfornation. All rights reserved.",
     },
     landing: {
       title: "Where Ideas Ignite",
-      subtitle: "InnovateHub is the premier launchpad for the next generation of creators, thinkers, and builders. Discover, back, and join the most ambitious projects.",
+      subtitle: "Transfornation is the premier platform for supporting Impact projects in Central Asia. Discover, back, and join the most ambitious impact initiatives.",
       exploreButton: "Explore All Projects",
       orJumpTo: "Or jump to a category",
       viewProject: "View Project"
@@ -150,7 +150,7 @@ export const translations: any = {
       noCreations: "You haven't created any projects yet.",
     },
     contest: {
-      title: "Global InnovateRank",
+      title: "Global ImpactRank",
       subtitle: "See which regions are leading the charge in innovation and community support.",
       byCountry: "By Country",
       byCity: "By City",
@@ -203,11 +203,11 @@ export const translations: any = {
       logout: "Выйти",
     },
     footer: {
-      copyright: "InnovateHub. Все права защищены.",
+      copyright: "Transfornation. Все права защищены.",
     },
     landing: {
       title: "Где зажигаются идеи",
-      subtitle: "InnovateHub — это главная площадка для нового поколения создателей, мыслителей и строителей. Находите, поддерживайте и присоединяйтесь к самым амбициозным проектам.",
+      subtitle: "Transfornation — это главная платформа для поддержки Impact-проектов Центральной Азии. Находите, поддерживайте и присоединяйтесь к самым амбициозным инициативам.",
       exploreButton: "Исследовать все проекты",
       orJumpTo: "Или перейдите к категории",
       viewProject: "Смотреть проект"
@@ -343,7 +343,7 @@ export const translations: any = {
       noCreations: "Вы еще не создали ни одного проекта.",
     },
     contest: {
-      title: "Глобальный InnovateRank",
+      title: "Глобальный ImpactRank",
       subtitle: "Узнайте, какие регионы лидируют в инновациях и поддержке сообщества.",
       byCountry: "По странам",
       byCity: "По городам",
@@ -396,11 +396,11 @@ export const translations: any = {
       logout: "登出",
     },
     footer: {
-      copyright: "InnovateHub. 版权所有。",
+      copyright: "Transfornation. 版权所有。",
     },
     landing: {
       title: "创意点燃之地",
-      subtitle: "InnovateHub是下一代创作者、思想家和建设者的首选发射台。发现、支持并加入最具雄心的项目。",
+      subtitle: "Transfornation是中亚影响力项目的首选平台。发现、支持并加入最具雄心的影响力倡议。",
       exploreButton: "探索所有项目",
       orJumpTo: "或跳转至分类",
       viewProject: "查看项目"
@@ -536,7 +536,7 @@ export const translations: any = {
       noCreations: "您还没有创建任何项目。",
     },
     contest: {
-      title: "全球InnovateRank",
+      title: "全球ImpactRank",
       subtitle: "看看哪些地区在创新和社区支持方面处于领先地位。",
       byCountry: "按国家",
       byCity: "按城市",

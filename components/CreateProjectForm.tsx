@@ -397,7 +397,7 @@ const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ onAddProject, onB
                                             <option value="instagram">Instagram</option>
                                             <option value="facebook">Facebook</option>
                                         </select>
-                                        <input type="url" value={link.url} onChange={(e) => handleSocialLinkChange(index, 'url', e.target.value)} className="block w-full text-sm rounded-md border-white/20 bg-gray-800 text-white focus:border-[#0057FF] focus:ring-[#0057FF]" placeholder="https://innovatehub.com" />
+                                        <input type="url" value={link.url} onChange={(e) => handleSocialLinkChange(index, 'url', e.target.value)} className="block w-full text-sm rounded-md border-white/20 bg-gray-800 text-white focus:border-[#0057FF] focus:ring-[#0057FF]" placeholder="https://transfornation.com" />
                                         <button type="button" onClick={() => removeSocialLink(index)} className="p-1.5 text-gray-400 hover:text-red-500 bg-gray-800 rounded-full h-7 w-7 flex items-center justify-center font-bold text-lg flex-shrink-0">
                                             &times;
                                         </button>
