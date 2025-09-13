@@ -91,8 +91,8 @@ const AppContent: React.FC = () => {
       if (path === '/') {
         setView(View.Landing);
         setSelectedProject(null);
-      } else if (path.startsWith('/project/')) {
-        const projectId = path.split('/project/')[1];
+      } else if (path.startsWith('/proj-')) {
+        const projectId = path.substring(1); // убираем первый слеш
         console.log('Looking for project ID:', projectId);
         console.log('Available project IDs:', projects.map(p => p.id));
         
@@ -165,8 +165,8 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (projects.length > 0) {
       const path = window.location.pathname;
-      if (path.startsWith('/project/')) {
-        const projectId = path.split('/project/')[1];
+      if (path.startsWith('/proj-')) {
+        const projectId = path.substring(1); // убираем первый слеш
         const project = projects.find(p => p.id === projectId);
         if (project) {
           console.log('Projects loaded, setting project:', project.title);
@@ -202,8 +202,8 @@ const AppContent: React.FC = () => {
   const handleSelectProject = (project: Project) => {
     setSelectedProject(project);
     setView(View.ProjectDetail);
-    // Update URL
-    window.history.pushState({}, '', `/project/${project.id}`);
+    // Update URL - используем старый формат /proj-xxx
+    window.history.pushState({}, '', `/${project.id}`);
     window.scrollTo(0,0);
   };
   
