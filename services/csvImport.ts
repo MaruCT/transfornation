@@ -53,6 +53,20 @@ function generateMockScores(): { anticipationScore: number; impactScore: number;
   };
 }
 
+function generateMockFunding(projectTitle: string): { goal: number; pledged: number; backers: number } {
+  // Generate realistic funding data based on project title
+  const baseGoal = Math.floor(Math.random() * 50000) + 10000; // $10k - $60k
+  const progressPercentage = Math.random() * 0.8 + 0.1; // 10% - 90% funded
+  const pledged = Math.floor(baseGoal * progressPercentage);
+  const backers = Math.floor(pledged / (Math.random() * 200 + 50)); // Average pledge $50-250
+  
+  return {
+    goal: baseGoal,
+    pledged,
+    backers: Math.max(backers, 1)
+  };
+}
+
 function parseJSONCell<T>(raw: string | undefined, fallback: T): T {
   if (!raw) return fallback;
   const attempts: string[] = [];
@@ -339,10 +353,10 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
     }
 
     const title = sanitize(get('title')) || 'Untitled';
-    const numBackers = parseNumber(get('backers'), 0) || Math.floor(Math.random() * 50) + 10;
+    const mockFunding = generateMockFunding(title);
     const mockScores = generateMockScores();
     const mockComments = generateMockComments(title);
-    const mockBackers = generateMockBackers(title, numBackers);
+    const mockBackers = generateMockBackers(title, mockFunding.backers);
     
     const project: Project = {
       id: get('id') || crypto.randomUUID(),
@@ -362,9 +376,9 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
       team,
       socialLinks,
       videoGenerationState: (get('videoGenerationState') as any) || 'none',
-      goal: parseNumber(get('goal'), 0),
-      pledged: parseNumber(get('pledged'), 0),
-      backers: numBackers,
+      goal: parseNumber(get('goal'), mockFunding.goal),
+      pledged: parseNumber(get('pledged'), mockFunding.pledged),
+      backers: parseNumber(get('backers'), mockFunding.backers),
       fundingVelocity: (get('fundingVelocity') as any) || 'stable',
       faq,
       rewards,

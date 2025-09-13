@@ -80,6 +80,51 @@ const AppContent: React.FC = () => {
   const [fundedProjectInfo, setFundedProjectInfo] = useState<{ title: string; amount: number; isFounder: boolean } | null>(null);
   const { t } = useLanguage();
 
+  // URL routing
+  useEffect(() => {
+    const handleURLChange = () => {
+      const path = window.location.pathname;
+      const searchParams = new URLSearchParams(window.location.search);
+      
+      if (path === '/') {
+        setView(View.Landing);
+        setSelectedProject(null);
+      } else if (path.startsWith('/project/')) {
+        const projectId = path.split('/project/')[1];
+        const project = projects.find(p => p.id === projectId);
+        if (project) {
+          setSelectedProject(project);
+          setView(View.ProjectDetail);
+        } else {
+          // Project not found, redirect to home
+          window.history.replaceState({}, '', '/');
+          setView(View.Landing);
+        }
+      } else if (path === '/projects') {
+        setView(View.Home);
+        setSelectedProject(null);
+      } else if (path === '/create') {
+        setView(View.CreateProject);
+        setSelectedProject(null);
+      } else if (path === '/profile') {
+        setView(View.Profile);
+        setSelectedProject(null);
+      } else if (path === '/contest') {
+        setView(View.Contest);
+        setSelectedProject(null);
+      }
+    };
+
+    // Handle initial load
+    handleURLChange();
+    
+    // Handle browser back/forward
+    window.addEventListener('popstate', handleURLChange);
+    
+    return () => {
+      window.removeEventListener('popstate', handleURLChange);
+    };
+  }, [projects]);
 
   const categories = useMemo(() => Array.from(new Set(projects.map(p => p.category))), [projects]);
   const filteredProjects = useMemo(() => {
@@ -133,6 +178,8 @@ const AppContent: React.FC = () => {
   const handleSelectProject = (project: Project) => {
     setSelectedProject(project);
     setView(View.ProjectDetail);
+    // Update URL
+    window.history.pushState({}, '', `/project/${project.id}`);
     window.scrollTo(0,0);
   };
   
@@ -155,6 +202,26 @@ const AppContent: React.FC = () => {
         alert("Please log in to see your profile.");
         return;
     }
+    
+    // Update URL based on view
+    switch (newView) {
+      case View.Landing:
+        window.history.pushState({}, '', '/');
+        break;
+      case View.Home:
+        window.history.pushState({}, '', '/projects');
+        break;
+      case View.CreateProject:
+        window.history.pushState({}, '', '/create');
+        break;
+      case View.Profile:
+        window.history.pushState({}, '', '/profile');
+        break;
+      case View.Contest:
+        window.history.pushState({}, '', '/contest');
+        break;
+    }
+    
     setView(newView);
   }
   
