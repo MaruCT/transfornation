@@ -358,6 +358,12 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
     const mockComments = generateMockComments(title);
     const mockBackers = generateMockBackers(title, mockFunding.backers);
     
+    console.log(`Generating mock data for project: "${title}"`);
+    console.log('Mock funding:', mockFunding);
+    console.log('CSV goal:', get('goal'), 'parsed:', parseNumber(get('goal'), 0));
+    console.log('CSV pledged:', get('pledged'), 'parsed:', parseNumber(get('pledged'), 0));
+    console.log('CSV backers:', get('backers'), 'parsed:', parseNumber(get('backers'), 0));
+    
     const project: Project = {
       id: get('id') || crypto.randomUUID(),
       slug: sanitize(getAny(['slug', 'permalink'], cols)) || undefined,
@@ -376,9 +382,9 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
       team,
       socialLinks,
       videoGenerationState: (get('videoGenerationState') as any) || 'none',
-      goal: parseNumber(get('goal'), mockFunding.goal),
-      pledged: parseNumber(get('pledged'), mockFunding.pledged),
-      backers: parseNumber(get('backers'), mockFunding.backers),
+      goal: parseNumber(get('goal'), 0) || mockFunding.goal,
+      pledged: parseNumber(get('pledged'), 0) || mockFunding.pledged,
+      backers: parseNumber(get('backers'), 0) || mockFunding.backers,
       fundingVelocity: (get('fundingVelocity') as any) || 'stable',
       faq,
       rewards,
@@ -397,6 +403,12 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
       impactScore: parseNumber(get('impactScore'), mockScores.impactScore),
       efficiencyScore: parseNumber(get('efficiencyScore'), mockScores.efficiencyScore),
     };
+
+    console.log(`Final project data for "${title}":`, {
+      goal: project.goal,
+      pledged: project.pledged,
+      backers: project.backers
+    });
 
     return project;
   });
