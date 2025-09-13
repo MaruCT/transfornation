@@ -148,8 +148,13 @@ export const summarizeComments = async (comments: Comment[]): Promise<{ sentimen
 export const generateInitialProjects = async (): Promise<Project[]> => {
     // Попытка загрузить проекты из CSV. При ошибке — откат к мок-данным ниже.
     try {
+        console.log('Attempting to load projects from CSV...');
         const csvProjects = await loadProjectsFromCSV();
-        if (csvProjects.length > 0) return csvProjects;
+        console.log('CSV projects loaded:', csvProjects.length);
+        if (csvProjects.length > 0) {
+            console.log('Using CSV projects');
+            return csvProjects;
+        }
     } catch (e) {
         console.warn('CSV projects load failed or empty. Falling back to mocks.', e);
     }

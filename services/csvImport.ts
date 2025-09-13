@@ -1,6 +1,6 @@
 import type { Project, MediaItem, TeamMember, SocialLink, Reward, Comment, Backer } from '../types';
 
-const CSV_URL = (import.meta as any).env?.VITE_PROJECTS_CSV_URL || 'https://docs.google.com/spreadsheets/d/1YOUR_SHEET_ID/export?format=csv&gid=0';
+const CSV_URL = (import.meta as any).env?.VITE_PROJECTS_CSV_URL || '/projects.csv';
 
 // Generate mock data for CSV projects
 function generateMockComments(projectTitle: string): Comment[] {
@@ -129,9 +129,13 @@ const fixHttpToHttps = (url: string | undefined): string => {
 };
 
 export async function loadProjectsFromCSV(): Promise<Project[]> {
+  console.log('Loading projects from CSV URL:', CSV_URL);
   const res = await fetch(CSV_URL, { cache: 'no-cache' });
+  console.log('CSV fetch response:', res.status, res.ok);
   if (!res.ok) throw new Error(`Failed to fetch CSV: ${res.status}`);
   const text = await res.text();
+  console.log('CSV text length:', text.length);
+  console.log('CSV first 500 chars:', text.substring(0, 500));
 
   // Определяем разделитель: запятая, таб или точка с запятой
   const firstLine = text.split(/\r?\n/)[0] || '';
@@ -348,7 +352,10 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
     return s;
   };
 
-  return rows.slice(1).map(cols => {
+  console.log('Total rows found:', rows.length);
+  console.log('Processing', rows.length - 1, 'project rows');
+  
+  const projects = rows.slice(1).map(cols => {
     const get = (name: string) => cols[idx(name)];
 
     const mediaRaw = parseJSONCell<MediaItem[]>(getAny(['mediaUrls', 'mediaURL', 'media'], cols), []);
@@ -445,6 +452,10 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
 
     return project;
   });
+  
+  console.log('Successfully loaded', projects.length, 'projects');
+  console.log('Project IDs:', projects.map(p => p.id));
+  return projects;
 }
 
 
