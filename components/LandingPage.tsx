@@ -130,7 +130,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ projects, categories, onSelec
                         initial={{ y: 30, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
-                        className="text-5xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-300 text-glow"
+                        className="text-5xl md:text-7xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-br from-white to-gray-300 text-glow"
                     >
                         {t('landing.title')}
                     </motion.h1>
