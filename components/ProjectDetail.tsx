@@ -122,10 +122,12 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, 
   
   const [activeMedia, setActiveMedia] = useState<MediaItem>(mediaForDisplay[0] || { type: 'image', url: project.imageUrl });
   const [isMediaLoading, setIsMediaLoading] = useState<boolean>(true);
+  const [videoError, setVideoError] = useState<boolean>(false);
 
   React.useEffect(() => {
     // Reset loader when media changes
     setIsMediaLoading(true);
+    setVideoError(false);
   }, [activeMedia]);
   
   const progressPercentage = Math.min((project.pledged / project.goal) * 100, 100);
@@ -206,6 +208,22 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, 
                                         className="w-full h-full object-cover" 
                                         onLoad={() => setIsMediaLoading(false)}
                                     />
+                                ) : videoError ? (
+                                    <div className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400">
+                                        <div className="text-center">
+                                            <p className="text-lg font-semibold mb-2">Видео недоступно</p>
+                                            <p className="text-sm">Не удалось загрузить видео</p>
+                                            <button 
+                                                onClick={() => {
+                                                    setVideoError(false);
+                                                    setIsMediaLoading(true);
+                                                }}
+                                                className="mt-4 px-4 py-2 bg-[#0057FF] text-white rounded-lg hover:bg-[#004AD8] transition-colors"
+                                            >
+                                                Попробовать снова
+                                            </button>
+                                        </div>
+                                    </div>
                                 ) : (
                                     <video
                                         src={activeMedia.url}
@@ -213,12 +231,23 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, 
                                         muted
                                         loop
                                         playsInline
-                                        preload="auto"
+                                        preload="metadata"
                                         className="w-full h-full object-cover"
+                                        controls
                                         controlsList="nodownload noplaybackrate nofullscreen"
                                         disablePictureInPicture
-                                        onLoadedData={() => setIsMediaLoading(false)}
-                                        onError={() => setIsMediaLoading(false)}
+                                        onLoadedData={() => {
+                                            console.log('Video loaded successfully:', activeMedia.url);
+                                            setIsMediaLoading(false);
+                                        }}
+                                        onError={(e) => {
+                                            console.error('Video failed to load:', activeMedia.url, e);
+                                            setIsMediaLoading(false);
+                                            setVideoError(true);
+                                        }}
+                                        onCanPlay={() => {
+                                            console.log('Video can play:', activeMedia.url);
+                                        }}
                                     />
                                 )}
                             </motion.div>
