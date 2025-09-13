@@ -13,8 +13,8 @@ function parseJSONCell<T>(raw: string | undefined, fallback: T): T {
   attempts.push(noNewlines);
   // 2) Normalize smart quotes to straight quotes
   const straightQuotes = noNewlines
-    .replace(/[“”]/g, '"')
-    .replace(/[‘’]/g, "'");
+    .replace(/[""]/g, '"')
+    .replace(/['']/g, "'");
   attempts.push(straightQuotes);
   // 3) Uppercase booleans (TRUE/FALSE) to lowercase
   const normalizedBools = straightQuotes.replace(/\bTRUE\b/g, 'true').replace(/\bFALSE\b/g, 'false');
@@ -22,12 +22,22 @@ function parseJSONCell<T>(raw: string | undefined, fallback: T): T {
   // 4) If it looks like JSON but missing outer quotes cleanup, try unwrapping outer quotes
   const unwrapped = normalizedBools.replace(/^"([\s\S]*)"$/,'$1');
   attempts.push(unwrapped);
+  // 5) Fix common JSON syntax errors - missing commas
+  const fixedCommas = unwrapped.replace(/"\s*"([^"]*)"\s*:/g, '", "$1":');
+  attempts.push(fixedCommas);
 
   for (const candidate of attempts) {
     try {
-      return JSON.parse(candidate) as T;
-    } catch {}
+      const result = JSON.parse(candidate) as T;
+      if (candidate !== base) {
+        console.log('JSON parsed successfully after normalization:', candidate.substring(0, 100) + '...');
+      }
+      return result;
+    } catch (error) {
+      console.log('JSON parse attempt failed:', error.message, 'for:', candidate.substring(0, 100) + '...');
+    }
   }
+  console.warn('All JSON parse attempts failed for:', base.substring(0, 100) + '...');
   return fallback;
 }
 
@@ -189,19 +199,39 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
   const normalizeDriveUrl = (url: string | undefined) => {
     if (!url) return '';
     const s = fixHttpToHttps(url).trim();
+    console.log('Normalizing Drive URL:', s);
+    
     // If it's already a Drive thumbnail link, keep as is
     if (/https:\/\/drive\.google\.com\/thumbnail\?/.test(s)) return s;
+    
     // file/d/{id}/...
     let m = s.match(/https:\/\/drive\.google\.com\/file\/d\/([^/?#]+)(?:[/?#]|$)/);
-    if (m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w2000`;
+    if (m) {
+      const normalized = `https://drive.google.com/thumbnail?id=${m[1]}&sz=w2000`;
+      console.log('Normalized Drive view URL to thumbnail:', normalized);
+      return normalized;
+    }
+    
     // open?id={id}
     m = s.match(/https:\/\/drive\.google\.com\/open\?[^#]*\bid=([^&#]+)/);
-    if (m) return `https://drive.google.com/thumbnail?id=${decodeURIComponent(m[1])}&sz=w2000`;
+    if (m) {
+      const normalized = `https://drive.google.com/thumbnail?id=${decodeURIComponent(m[1])}&sz=w2000`;
+      console.log('Normalized Drive open URL to thumbnail:', normalized);
+      return normalized;
+    }
+    
     // any link that has id=...
     m = s.match(/\bid=([^&#]+)/);
-    if (m && /drive\.google\.com/.test(s)) return `https://drive.google.com/thumbnail?id=${decodeURIComponent(m[1])}&sz=w2000`;
+    if (m && /drive\.google\.com/.test(s)) {
+      const normalized = `https://drive.google.com/thumbnail?id=${decodeURIComponent(m[1])}&sz=w2000`;
+      console.log('Normalized Drive ID URL to thumbnail:', normalized);
+      return normalized;
+    }
+    
     // Allow existing uc links but prefer thumbnail when possible
     if (/https:\/\/drive\.google\.com\/uc\?/.test(s)) return s;
+    
+    console.log('Drive URL not normalized, returning as-is:', s);
     return s;
   };
 
@@ -224,13 +254,27 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
     const get = (name: string) => cols[idx(name)];
 
     const mediaRaw = parseJSONCell<MediaItem[]>(getAny(['mediaUrls', 'mediaURL', 'media'], cols), []);
+    console.log('Raw media data:', mediaRaw);
+    
     const isValidUrl = (u?: string) => !!u && /^(https?:)?\/\//i.test(u);
     let media: MediaItem[] = mediaRaw
-      .map(m => ({
-        ...m,
-        url: m.type === 'video' ? normalizeDriveVideoUrl(sanitize(m.url)) : normalizeDriveUrl(sanitize(m.url))
-      }))
-      .filter(m => isValidUrl(m.url));
+      .map(m => {
+        const normalizedUrl = m.type === 'video' ? normalizeDriveVideoUrl(sanitize(m.url)) : normalizeDriveUrl(sanitize(m.url));
+        console.log(`Processing ${m.type} media:`, m.url, '->', normalizedUrl);
+        return {
+          ...m,
+          url: normalizedUrl
+        };
+      })
+      .filter(m => {
+        const isValid = isValidUrl(m.url);
+        if (!isValid) {
+          console.warn('Filtered out invalid media URL:', m.url);
+        }
+        return isValid;
+      });
+    
+    console.log('Final processed media:', media);
     const team: TeamMember[] = parseJSONCell<TeamMember[]>(get('team'), []);
     const socialLinks: SocialLink[] = parseJSONCell<SocialLink[]>(get('socialLinks'), []);
     const faq = parseJSONCell<{question: string; answer: string}[]>(get('faq'), []);
