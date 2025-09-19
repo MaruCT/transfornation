@@ -63,6 +63,11 @@ export interface SocialLink {
   url: string;
 }
 
+export interface DocumentLink {
+  title: string;
+  url: string;
+}
+
 export interface Project {
   id: string;
   slug?: string;
@@ -104,6 +109,8 @@ export interface Project {
   anticipationScore: number; // 0-100
   impactScore: number; // 0-100
   efficiencyScore: number; // 0-100
+  // Documents attached by creator (links to specs, pitch decks, etc.)
+  documents?: DocumentLink[];
   // Translation support
   translations?: {
     [language: string]: {

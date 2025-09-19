@@ -509,6 +509,25 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, 
                                 </button>
                             </div>
                          </div>
+                        {Array.isArray(project.documents) && project.documents.length > 0 && (
+                          <div className="mt-6 pt-6 border-t border-white/10">
+                            <h4 className="text-sm font-bold tracking-widest uppercase text-gray-400 mb-4">{t('projectDetail.documents')}</h4>
+                            <div className="flex flex-col gap-2">
+                              {project.documents.map((doc, i) => (
+                                <a
+                                  key={`${doc.url}-${i}`}
+                                  href={doc.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-gray-200 px-4 py-3 transition-colors"
+                                >
+                                  <span className="truncate mr-3">{doc.title}</span>
+                                  <ShareIcon className="h-4 w-4 text-gray-400" />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                     </div>
                      <div className="space-y-4">
                         <h3 className="text-xl font-bold text-white text-glow">{t('projectDetail.supportProject')}</h3>

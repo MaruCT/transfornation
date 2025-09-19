@@ -1,4 +1,4 @@
-import type { Project, MediaItem, TeamMember, SocialLink, Reward, Comment, Backer } from '../types';
+import type { Project, MediaItem, TeamMember, SocialLink, Reward, Comment, Backer, DocumentLink } from '../types';
 
 const CSV_URL = (import.meta as any).env?.VITE_PROJECTS_CSV_URL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS9xSZixnYNJMo8WKLPZEv9Wns4g0-7miMcht2DVu-f-V2iXxljIfszPE_dhEjuwMLj0DwH9fwmqV4X/pub?output=csv';
 
@@ -361,7 +361,7 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
     const mediaRaw = parseJSONCell<MediaItem[]>(getAny(['mediaUrls', 'mediaURL', 'media'], cols), []);
     console.log('Raw media data:', mediaRaw);
     
-    const isValidUrl = (u?: string) => !!u && /^(https?:)?\/\//i.test(u);
+    const isValidMediaUrl = (u?: string) => !!u && /^(https?:)?\/\//i.test(u);
     let media: MediaItem[] = mediaRaw
       .map(m => {
         const normalizedUrl = m.type === 'video' ? normalizeDriveVideoUrl(sanitize(m.url)) : normalizeDriveUrl(sanitize(m.url));
@@ -372,7 +372,7 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
         };
       })
       .filter(m => {
-        const isValid = isValidUrl(m.url);
+        const isValid = isValidMediaUrl(m.url);
         if (!isValid) {
           console.warn('Filtered out invalid media URL:', m.url);
         }
@@ -384,11 +384,34 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
     const socialLinks: SocialLink[] = parseJSONCell<SocialLink[]>(get('socialLinks'), []);
     const faq = parseJSONCell<{question: string; answer: string}[]>(get('faq'), []);
     const rewards: Reward[] = parseJSONCell<Reward[]>(get('rewards'), []);
+    // Documents: support JSON column or paired arrays of titles/urls
+    const documentsJson = parseJSONCell<DocumentLink[]>(getAny(['documents', 'docs'], cols), []);
+    const docUrls = parseJSONCell<string[]>(getAny(['docUrls', 'documentUrls', 'documentsUrls'], cols), []);
+    const docTitles = parseJSONCell<string[]>(getAny(['docTitles', 'documentTitles', 'documentsTitles'], cols), []);
+    let documents: DocumentLink[] = [];
+    if (Array.isArray(docUrls) && docUrls.length) {
+      const count = Math.max(docUrls.length, Array.isArray(docTitles) ? docTitles.length : 0);
+      for (let i = 0; i < count; i += 1) {
+        const rawUrl = sanitize(docUrls[i] || '');
+        const url = fixHttpToHttps(rawUrl);
+        if (!url) continue;
+        const title = sanitize((docTitles && docTitles[i]) || '') || 'Document';
+        documents.push({ title, url });
+      }
+    }
+    if (Array.isArray(documentsJson) && documentsJson.length) {
+      documents = [...documents, ...documentsJson.map(d => ({ title: sanitize((d as any).title) || 'Document', url: fixHttpToHttps((d as any).url) }))];
+    }
+    // Dedupe by url and filter invalid
+    const isValidDocUrl = (u?: string) => !!u && /^(https?:)?\/\//i.test(u);
+    documents = documents
+      .filter(d => isValidDocUrl(d.url))
+      .reduce((acc: DocumentLink[], d) => acc.some(x => x.url === d.url) ? acc : [...acc, d], []);
 
     // Ensure cover image also appears in media as first item
     const rawCover = getAny(['imageUrl', 'imageURL', 'image', 'cover', 'coverImage'], cols);
     const normalizedCover = normalizeDriveUrl(sanitize(stripBrackets(rawCover) || ''));
-    if (isValidUrl(normalizedCover) && !media.some(m => m.type === 'image' && m.url === normalizedCover)) {
+    if (isValidMediaUrl(normalizedCover) && !media.some(m => m.type === 'image' && m.url === normalizedCover)) {
       media = [{ type: 'image', url: normalizedCover }, ...media];
     }
 
@@ -417,11 +440,12 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
       description: formatPlainTextToHtml(get('description')),
       problems: formatPlainTextToHtml(getAny(['problems', 'problem', 'problemStatement'], cols)),
       category: sanitize(get('category')) || 'General',
-      imageUrl: isValidUrl(normalizedCover) ? normalizedCover : '',
+      imageUrl: isValidMediaUrl(normalizedCover) ? normalizedCover : '',
       isFeatured: parseBoolean(getAny(['isFeatured', 'featured'], cols)),
       media,
       team,
       socialLinks,
+      documents: documents.length ? documents : undefined,
       videoGenerationState: (get('videoGenerationState') as any) || 'none',
       goal: csvGoal,
       pledged: csvPledged,
