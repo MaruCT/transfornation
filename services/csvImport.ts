@@ -29,7 +29,7 @@ function generateMockComments(projectTitle: string): Comment[] {
 }
 
 function generateMockBackers(projectTitle: string, numBackers: number): Backer[] {
-  const levels = ['Bronze', 'Silver', 'Gold', 'Platinum'];
+  const levels: Array<'Bronze' | 'Silver' | 'Gold'> = ['Bronze', 'Silver', 'Gold'];
   const badges = ['Early Bird', 'Super Supporter', 'Community Champion', 'Innovation Partner'];
   
   return Array.from({ length: numBackers }, (_, i) => {
@@ -393,16 +393,17 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
     }
 
     const title = sanitize(get('title')) || 'Untitled';
-    const mockFunding = generateMockFunding(title);
     const mockScores = generateMockScores();
     const mockComments = generateMockComments(title);
-    const mockBackers = generateMockBackers(title, mockFunding.backers);
+    // Выключаем случайные бейкеры и суммы — используем только значения из CSV
+    const csvGoal = parseNumber(get('goal'), 0);
+    const csvPledged = parseNumber(get('pledged'), 0);
+    const csvBackers = parseNumber(get('backers'), 0);
     
     console.log(`Generating mock data for project: "${title}"`);
-    console.log('Mock funding:', mockFunding);
-    console.log('CSV goal:', get('goal'), 'parsed:', parseNumber(get('goal'), 0));
-    console.log('CSV pledged:', get('pledged'), 'parsed:', parseNumber(get('pledged'), 0));
-    console.log('CSV backers:', get('backers'), 'parsed:', parseNumber(get('backers'), 0));
+    console.log('CSV goal:', get('goal'), 'parsed:', csvGoal);
+    console.log('CSV pledged:', get('pledged'), 'parsed:', csvPledged);
+    console.log('CSV backers:', get('backers'), 'parsed:', csvBackers);
     
     const project: Project = {
       id: get('id') || crypto.randomUUID(),
@@ -422,9 +423,9 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
       team,
       socialLinks,
       videoGenerationState: (get('videoGenerationState') as any) || 'none',
-      goal: parseNumber(get('goal'), 0) || mockFunding.goal,
-      pledged: parseNumber(get('pledged'), 0) || mockFunding.pledged,
-      backers: parseNumber(get('backers'), 0) || mockFunding.backers,
+      goal: csvGoal,
+      pledged: csvPledged,
+      backers: csvBackers,
       fundingVelocity: (get('fundingVelocity') as any) || 'stable',
       faq,
       rewards,
@@ -435,7 +436,7 @@ export async function loadProjectsFromCSV(): Promise<Project[]> {
       },
       roadmap: [],
       analysis: undefined,
-      backersList: mockBackers,
+      backersList: [],
       favoritedBy: [],
       city: get('city') || '',
       country: get('country') || '',
