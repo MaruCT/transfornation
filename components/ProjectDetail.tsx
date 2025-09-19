@@ -541,6 +541,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, 
                         {Array.isArray(project.documents) && project.documents.length > 0 && (
                           <div className="mt-6 pt-6 border-t border-white/10">
                             <h4 className="text-sm font-bold tracking-widest uppercase text-gray-400 mb-4">{t('projectDetail.documents')}</h4>
+                            {console.log('Rendering documents:', project.documents?.length)}
                             <div className="flex flex-col gap-2">
                               {project.documents.map((doc, i) => (
                                 <a
