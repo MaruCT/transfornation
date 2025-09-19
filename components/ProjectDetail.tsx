@@ -129,6 +129,31 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, 
     setIsMediaLoading(true);
     setVideoError(false);
   }, [activeMedia]);
+
+  // Ensure loader hides even if image loads from cache or load events are missed
+  React.useEffect(() => {
+    let revoke = false;
+    if (!activeMedia || !activeMedia.url) {
+      setIsMediaLoading(false);
+      return;
+    }
+    if (activeMedia.type === 'image') {
+      const img = new Image();
+      img.onload = () => { if (!revoke) setIsMediaLoading(false); };
+      img.onerror = () => { if (!revoke) setIsMediaLoading(false); };
+      img.src = activeMedia.url;
+      // Если уже прогружено из кэша
+      if (img.complete) {
+        setIsMediaLoading(false);
+      }
+      return () => { revoke = true; };
+    }
+    // Для видео/iframe дадим таймаут-фолбек на случай отсутствия события
+    const timeout = window.setTimeout(() => {
+      setIsMediaLoading(false);
+    }, 3000);
+    return () => window.clearTimeout(timeout);
+  }, [activeMedia]);
   
   const progressPercentage = Math.min((project.pledged / project.goal) * 100, 100);
   const isFavorited = currentUser && project.favoritedBy.includes(currentUser.id);
@@ -207,6 +232,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, 
                                         alt={project.title} 
                                         className="w-full h-full object-cover" 
                                         onLoad={() => setIsMediaLoading(false)}
+                                        onError={() => setIsMediaLoading(false)}
                                     />
                                 ) : videoError ? (
                                     <div className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-400">
@@ -254,6 +280,9 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onBack, onFund, 
                                         disablePictureInPicture
                                         onLoadedData={() => {
                                             console.log('Video loaded successfully:', activeMedia.url);
+                                            setIsMediaLoading(false);
+                                        }}
+                                        onLoadedMetadata={() => {
                                             setIsMediaLoading(false);
                                         }}
                                         onError={(e) => {
