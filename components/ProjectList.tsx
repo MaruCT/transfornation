@@ -19,16 +19,20 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
+      staggerChildren: 0.05, // Reduced stagger for better mobile performance
     },
   },
 };
 
 const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
+  hidden: { y: 10, opacity: 0 }, // Reduced movement for smoother animation
   visible: {
     y: 0,
     opacity: 1,
+    transition: {
+      duration: 0.3, // Shorter duration for better mobile performance
+      ease: "easeOut"
+    }
   },
 };
 
@@ -96,9 +100,23 @@ const ProjectList: React.FC<ProjectListProps> = ({ projects, categories, selecte
           variants={containerVariants}
           initial="hidden"
           animate="visible"
+          style={{ 
+            // Optimize for mobile scrolling
+            willChange: 'auto',
+            transform: 'translateZ(0)'
+          }}
         >
-          {visibleProjects.map(project => (
-            <motion.div key={project.id} variants={itemVariants} className="masonry-item">
+          {visibleProjects.map((project, index) => (
+            <motion.div 
+              key={project.id} 
+              variants={itemVariants} 
+              className="masonry-item"
+              style={{
+                // Optimize individual items for mobile
+                willChange: 'auto',
+                transform: 'translateZ(0)'
+              }}
+            >
                 <ProjectCard 
                     project={project} 
                     onSelectProject={onSelectProject} 

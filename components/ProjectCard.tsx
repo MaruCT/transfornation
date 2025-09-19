@@ -43,14 +43,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onSelectProject, cla
 
   return (
     <motion.div 
-      className={`relative rounded-2xl overflow-hidden flex flex-col cursor-pointer group transition-all duration-300 isolate ${className}`}
+      className={`relative rounded-2xl overflow-hidden flex flex-col cursor-pointer group transition-all duration-300 isolate project-card ${className}`}
       onClick={() => onSelectProject(project)}
       layoutId={`project-card-${project.id}`}
-      whileHover={{ y: -8, scale: 1.03 }}
+      whileHover={{ y: -4, scale: 1.02 }} // Reduced hover effect for better mobile performance
       style={{
         background: 'rgba(0, 22, 65, 0.4)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
+        // Optimize for mobile scrolling
+        willChange: 'auto',
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden'
       }}
     >
       {/* Base border */}

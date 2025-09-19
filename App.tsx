@@ -186,6 +186,33 @@ const AppContent: React.FC = () => {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
+  // Prevent pull-to-refresh and unwanted page reloads on mobile
+  useEffect(() => {
+    const preventPullToRefresh = (e: TouchEvent) => {
+      // Prevent pull-to-refresh when at the top of the page
+      if (window.scrollY === 0 && e.touches[0]?.clientY > e.touches[0]?.clientY) {
+        e.preventDefault();
+      }
+    };
+
+    const preventContextMenu = (e: Event) => {
+      e.preventDefault();
+    };
+
+    // Add touch event listeners
+    document.addEventListener('touchstart', preventPullToRefresh, { passive: false });
+    document.addEventListener('touchmove', preventPullToRefresh, { passive: false });
+    
+    // Prevent context menu on long press (can interfere with scrolling)
+    document.addEventListener('contextmenu', preventContextMenu);
+
+    return () => {
+      document.removeEventListener('touchstart', preventPullToRefresh);
+      document.removeEventListener('touchmove', preventPullToRefresh);
+      document.removeEventListener('contextmenu', preventContextMenu);
+    };
+  }, []);
+
   const handleSelectProject = (project: Project) => {
     setSelectedProject(project);
     setView(View.ProjectDetail);
