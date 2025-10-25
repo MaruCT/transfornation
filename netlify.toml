@@ -1,5 +1,6 @@
 [build]
   functions = "netlify/functions"
+  publish = "dist"
 
 [[redirects]]
   from = "/api/*"
@@ -10,3 +11,4 @@
   from = "/*"
   to = "/index.html"
   status = 200
+  force = false
