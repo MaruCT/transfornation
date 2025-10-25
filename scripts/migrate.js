@@ -1,7 +1,7 @@
 import pkg from 'pg';
 const { Client } = pkg;
 
-const DATABASE_URL = 'postgresql://postgres:EldltIoTaLEHrcuqJFOTWIpdvarCRkcn@interchange.proxy.rlwy.net:26312/railway';
+const DATABASE_URL = 'postgresql://postgres:bYcltjuZgaVjmflUUTwPqSWBKlnFYhRW@interchange.proxy.rlwy.net:35832/railway';
 
 const migrationSQL = `
 -- Drop existing tables if they exist (in reverse order of dependencies)

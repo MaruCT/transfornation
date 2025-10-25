@@ -8,7 +8,7 @@ const { Client } = pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const DATABASE_URL = 'postgresql://postgres:EldltIoTaLEHrcuqJFOTWIpdvarCRkcn@interchange.proxy.rlwy.net:26312/railway';
+const DATABASE_URL = 'postgresql://postgres:bYcltjuZgaVjmflUUTwPqSWBKlnFYhRW@interchange.proxy.rlwy.net:35832/railway';
 const CSV_FILE_PATH = path.join(__dirname, '..', 'tpdb.csv');
 
 // Helper functions from csvImport.ts

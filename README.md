@@ -1,20 +1,83 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Transfornation - Краудфандинговая Платформа
 
-# Run and deploy your AI Studio app
+Современная краудфандинговая платформа с PostgreSQL и Netlify Functions.
 
-This contains everything you need to run your app locally.
+## 🚀 Технологии
 
-View your app in AI Studio: https://ai.studio/apps/drive/1BO485MvgdtRQHS-3_F8o7AAbyfFdwInx
+- **Frontend**: React + TypeScript + Vite
+- **Backend**: Netlify Functions (Serverless)
+- **Database**: PostgreSQL
+- **Deployment**: Netlify
 
-## Run Locally
+## 📦 Установка
 
-**Prerequisites:**  Node.js
+```bash
+npm install
+```
 
+## 🗄️ База данных
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Настройка PostgreSQL
+
+1. Создайте PostgreSQL базу данных (например, на Railway.app)
+2. Запустите миграции:
+
+```bash
+node scripts/migrate.js
+```
+
+3. Импортируйте данные из CSV:
+
+```bash
+node scripts/importCSV.js
+```
+
+### Переменные окружения для Netlify
+
+Добавьте в Netlify Environment Variables:
+
+```
+DATABASE_URL=postgresql://user:password@host:port/database
+```
+
+## 🎯 Разработка
+
+```bash
+npm run dev
+```
+
+## 🌐 Деплой на Netlify
+
+1. Подключите репозиторий к Netlify
+2. Добавьте переменную окружения `DATABASE_URL`
+3. Netlify автоматически соберёт и задеплоит приложение
+
+### Netlify Functions
+
+API автоматически доступен по адресу:
+- `GET /api/projects` - Получить все проекты
+- `GET /api/projects/:id` - Получить проект по ID
+- `POST /api/projects` - Создать проект
+
+## 📁 Структура проекта
+
+```
+├── components/          # React компоненты
+├── services/           # API сервисы
+├── netlify/
+│   └── functions/      # Serverless функции
+├── scripts/            # Миграции и импорт данных
+└── types.ts            # TypeScript типы
+```
+
+## 🔧 Скрипты
+
+- `npm run dev` - Запуск dev сервера
+- `npm run build` - Сборка для production
+- `npm run preview` - Предпросмотр production сборки
+- `node scripts/migrate.js` - Запуск миграций БД
+- `node scripts/importCSV.js` - Импорт данных из CSV
+
+## 📝 Лицензия
+
+MIT
