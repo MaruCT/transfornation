@@ -16,9 +16,10 @@ import ContestView from './components/ContestView';
 import LandingPage from './components/LandingPage';
 import EventDetail from './components/EventDetail';
 import AdminPanel from './components/AdminPanel';
-import { generateInitialProjects, generateProjectImage, summarizeComments, generateFoundersPassImage, generateProjectScores } from './services/geminiService';
+import { generateProjectImage, summarizeComments, generateFoundersPassImage, generateProjectScores } from './services/geminiService';
 import { chatWithOpenAI } from './services/openaiService';
 import { mockBlogPosts, mockEvents } from './services/mockData';
+import { loadProjectsFromAPI } from './services/apiService';
 import Confetti from './components/Confetti';
 import SuccessModal from './components/SuccessModal';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
@@ -148,12 +149,14 @@ const AppContent: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const initialProjects = await generateInitialProjects();
+      console.log('Loading projects from PostgreSQL database via API...');
+      const initialProjects = await loadProjectsFromAPI();
+      console.log('Loaded projects from database:', initialProjects.length);
       setProjects(initialProjects);
       setBlogPosts(mockBlogPosts);
       setEvents(mockEvents);
     } catch (e) {
-      console.error(e);
+      console.error('Error loading projects from database:', e);
       setError("Failed to load projects. Please try again later.");
     } finally {
       setIsLoading(false);
