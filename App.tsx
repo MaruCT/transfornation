@@ -15,6 +15,7 @@ import Profile from './components/Profile';
 import ContestView from './components/ContestView';
 import LandingPage from './components/LandingPage';
 import EventDetail from './components/EventDetail';
+import AdminPanel from './components/AdminPanel';
 import { generateInitialProjects, generateProjectImage, summarizeComments, generateFoundersPassImage, generateProjectScores } from './services/geminiService';
 import { chatWithOpenAI } from './services/openaiService';
 import { mockBlogPosts, mockEvents } from './services/mockData';
@@ -520,6 +521,8 @@ const AppContent: React.FC = () => {
                               />
       case View.Contest:
         return <ContestView projects={projects} onSelectProject={handleSelectProject} />
+      case View.Admin:
+        return <AdminPanel onBack={() => setCurrentView(View.Home)} />
       case View.Home:
         return <ProjectList 
                     projects={filteredProjects} 

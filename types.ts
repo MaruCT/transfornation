@@ -157,6 +157,7 @@ export enum View {
   CreateProject = 'CREATE_PROJECT',
   Profile = 'PROFILE',
   Contest = 'CONTEST',
+  Admin = 'ADMIN',
 }
 
 export interface ChatMessage {

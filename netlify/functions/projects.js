@@ -322,12 +322,87 @@ export const handler = async (event, context) => {
     // POST /api/projects - Create project
     if (httpMethod === 'POST') {
       const data = JSON.parse(event.body);
+      const client = await pool.connect();
 
-      // Implementation for creating project
+      try {
+        await client.query('BEGIN');
+
+        const projectId = data.id || `proj-${Date.now()}`;
+        const creatorId = (data.creator || 'Unknown').toLowerCase().replace(/\s+/g, '_');
+
+        // Insert or update user
+        await client.query(`
+          INSERT INTO users (id, name, avatar)
+          VALUES ($1, $2, $3)
+          ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name
+        `, [creatorId, data.creator || 'Unknown', data.creatorAvatar || '']);
+
+        // Insert project
+        await client.query(`
+          INSERT INTO projects (
+            id, creator_id, title, creator, creator_bio, creator_avatar, tagline,
+            description, problems, category, image_url, goal, pledged, backers_count,
+            funding_velocity, city, country, anticipation_score, impact_score, efficiency_score
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+        `, [
+          projectId, creatorId, data.title, data.creator, data.creatorBio, data.creatorAvatar,
+          data.tagline, data.description, data.problems, data.category, data.imageUrl,
+          data.goal, data.pledged || 0, data.backers || 0, data.fundingVelocity || 'stable',
+          data.city, data.country, data.anticipationScore || 75, data.impactScore || 75, data.efficiencyScore || 75
+        ]);
+
+        await client.query('COMMIT');
+
+        return {
+          statusCode: 201,
+          headers,
+          body: JSON.stringify({ id: projectId, message: 'Project created successfully' })
+        };
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    }
+
+    // PUT /api/projects/:id - Update project
+    if (httpMethod === 'PUT' && path.includes('/projects/')) {
+      const id = path.split('/projects/')[1];
+      const data = JSON.parse(event.body);
+
+      await pool.query(`
+        UPDATE projects SET
+          title = $1, creator = $2, creator_bio = $3, creator_avatar = $4, tagline = $5,
+          description = $6, problems = $7, category = $8, image_url = $9, goal = $10,
+          pledged = $11, backers_count = $12, city = $13, country = $14,
+          anticipation_score = $15, impact_score = $16, efficiency_score = $17,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $18
+      `, [
+        data.title, data.creator, data.creatorBio, data.creatorAvatar, data.tagline,
+        data.description, data.problems, data.category, data.imageUrl, data.goal,
+        data.pledged, data.backers, data.city, data.country,
+        data.anticipationScore, data.impactScore, data.efficiencyScore, id
+      ]);
+
       return {
-        statusCode: 201,
+        statusCode: 200,
         headers,
-        body: JSON.stringify({ message: 'Project creation not yet implemented' })
+        body: JSON.stringify({ message: 'Project updated successfully' })
+      };
+    }
+
+    // DELETE /api/projects/:id - Delete project
+    if (httpMethod === 'DELETE' && path.includes('/projects/')) {
+      const id = path.split('/projects/')[1];
+
+      await pool.query('DELETE FROM projects WHERE id = $1', [id]);
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ message: 'Project deleted successfully' })
       };
     }
 
