@@ -7,7 +7,6 @@ import ProjectList from './components/ProjectList';
 import ProjectDetail from './components/ProjectDetail';
 import CreateProjectForm from './components/CreateProjectForm';
 import CommandPalette from './components/CommandPalette';
-import LiveActivityFeed from './components/LiveActivityFeed';
 import ProjectListSkeleton from './components/Skeletons';
 import Globe from './components/Globe';
 import Chatbot from './components/Chatbot';
@@ -525,7 +524,7 @@ const AppContent: React.FC = () => {
       case View.Contest:
         return <ContestView projects={projects} onSelectProject={handleSelectProject} />
       case View.Admin:
-        return <AdminPanel onBack={() => setCurrentView(View.Home)} />
+        return <AdminPanel onBack={() => handleSetView(View.Home)} />
       case View.Home:
         return <ProjectList 
                     projects={filteredProjects} 
@@ -573,7 +572,6 @@ const AppContent: React.FC = () => {
                 setCommandPaletteOpen(false);
             }}
         />
-        <LiveActivityFeed projects={projects} onSelectProject={handleSelectProject} />
 
         {chatMessages.length > 0 && (
             <Chatbot 

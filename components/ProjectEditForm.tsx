@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Save, Plus, Trash2 } from 'lucide-react';
-import type { Project, MediaItem } from '../types';
+import type { Project, MediaItem, TeamMember, SocialLink, Reward, RoadmapStep } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import MediaUploader from './MediaUploader';
 import ImageUploadField from './ImageUploadField';
+import TeamEditor from './TeamEditor';
+import SocialLinksEditor from './SocialLinksEditor';
+import FAQEditor from './FAQEditor';
+import RoadmapEditor from './RoadmapEditor';
+import RewardsEditor from './RewardsEditor';
 
 interface ProjectEditFormProps {
   project: Project | null;
@@ -34,10 +39,11 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
     efficiencyScore: 75,
   });
 
-  const [rewards, setRewards] = useState<any[]>([]);
-  const [faqs, setFaqs] = useState<any[]>([]);
-  const [team, setTeam] = useState<any[]>([]);
-  const [socialLinks, setSocialLinks] = useState<any[]>([]);
+  const [rewards, setRewards] = useState<Reward[]>([]);
+  const [faqs, setFaqs] = useState<{ question: string; answer: string }[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+  const [roadmap, setRoadmap] = useState<RoadmapStep[]>([]);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -66,6 +72,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
       setFaqs(project.faq || []);
       setTeam(project.team || []);
       setSocialLinks(project.socialLinks || []);
+      setRoadmap(project.roadmap || []);
       setMedia(project.media || []);
     }
   }, [project]);
@@ -82,6 +89,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
         faq: faqs,
         team,
         socialLinks,
+        roadmap,
         media,
       });
       onClose();
@@ -96,7 +104,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
   const categories = ['Tech', 'Art', 'Music', 'Game', 'Robotech', 'General'];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-[9999] overflow-y-auto pt-24">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -350,6 +358,31 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
               {/* Media Gallery */}
               <div className="border-t pt-6">
                 <MediaUploader media={media} onChange={setMedia} />
+              </div>
+
+              {/* Rewards */}
+              <div className="border-t pt-6 mt-6">
+                <RewardsEditor rewards={rewards} onChange={setRewards} />
+              </div>
+
+              {/* Team Members */}
+              <div className="border-t pt-6 mt-6">
+                <TeamEditor team={team} onChange={setTeam} />
+              </div>
+
+              {/* Social Links */}
+              <div className="border-t pt-6 mt-6">
+                <SocialLinksEditor socialLinks={socialLinks} onChange={setSocialLinks} />
+              </div>
+
+              {/* FAQ */}
+              <div className="border-t pt-6 mt-6">
+                <FAQEditor faqs={faqs} onChange={setFaqs} />
+              </div>
+
+              {/* Roadmap */}
+              <div className="border-t pt-6 mt-6">
+                <RoadmapEditor roadmap={roadmap} onChange={setRoadmap} />
               </div>
             </div>
           </div>
