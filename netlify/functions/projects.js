@@ -351,6 +351,60 @@ export const handler = async (event, context) => {
           data.city, data.country, data.anticipationScore || 75, data.impactScore || 75, data.efficiencyScore || 75
         ]);
 
+        // Insert media items
+        if (data.media && Array.isArray(data.media)) {
+          for (let i = 0; i < data.media.length; i++) {
+            const mediaItem = data.media[i];
+            await client.query(`
+              INSERT INTO media_items (project_id, type, url, position)
+              VALUES ($1, $2, $3, $4)
+            `, [projectId, mediaItem.type, mediaItem.url, i]);
+          }
+        }
+
+        // Insert rewards
+        if (data.rewards && Array.isArray(data.rewards)) {
+          for (let i = 0; i < data.rewards.length; i++) {
+            const reward = data.rewards[i];
+            await client.query(`
+              INSERT INTO rewards (project_id, title, pledge_amount, description, is_founders_pass, position)
+              VALUES ($1, $2, $3, $4, $5, $6)
+            `, [projectId, reward.title, reward.pledgeAmount, reward.description, reward.isFoundersPass || false, i]);
+          }
+        }
+
+        // Insert FAQs
+        if (data.faq && Array.isArray(data.faq)) {
+          for (let i = 0; i < data.faq.length; i++) {
+            const faq = data.faq[i];
+            await client.query(`
+              INSERT INTO faqs (project_id, question, answer, position)
+              VALUES ($1, $2, $3, $4)
+            `, [projectId, faq.question, faq.answer, i]);
+          }
+        }
+
+        // Insert team members
+        if (data.team && Array.isArray(data.team)) {
+          for (let i = 0; i < data.team.length; i++) {
+            const member = data.team[i];
+            await client.query(`
+              INSERT INTO team_members (project_id, name, role, avatar, position)
+              VALUES ($1, $2, $3, $4, $5)
+            `, [projectId, member.name, member.role, member.avatar, i]);
+          }
+        }
+
+        // Insert social links
+        if (data.socialLinks && Array.isArray(data.socialLinks)) {
+          for (const link of data.socialLinks) {
+            await client.query(`
+              INSERT INTO social_links (project_id, platform, url)
+              VALUES ($1, $2, $3)
+            `, [projectId, link.platform, link.url]);
+          }
+        }
+
         await client.query('COMMIT');
 
         return {
@@ -370,27 +424,109 @@ export const handler = async (event, context) => {
     if (httpMethod === 'PUT' && path.includes('/projects/')) {
       const id = path.split('/projects/')[1];
       const data = JSON.parse(event.body);
+      const client = await pool.connect();
 
-      await pool.query(`
-        UPDATE projects SET
-          title = $1, creator = $2, creator_bio = $3, creator_avatar = $4, tagline = $5,
-          description = $6, problems = $7, category = $8, image_url = $9, goal = $10,
-          pledged = $11, backers_count = $12, city = $13, country = $14,
-          anticipation_score = $15, impact_score = $16, efficiency_score = $17,
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = $18
-      `, [
-        data.title, data.creator, data.creatorBio, data.creatorAvatar, data.tagline,
-        data.description, data.problems, data.category, data.imageUrl, data.goal,
-        data.pledged, data.backers, data.city, data.country,
-        data.anticipationScore, data.impactScore, data.efficiencyScore, id
-      ]);
+      try {
+        await client.query('BEGIN');
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ message: 'Project updated successfully' })
-      };
+        // Update project
+        await client.query(`
+          UPDATE projects SET
+            title = $1, creator = $2, creator_bio = $3, creator_avatar = $4, tagline = $5,
+            description = $6, problems = $7, category = $8, image_url = $9, goal = $10,
+            pledged = $11, backers_count = $12, city = $13, country = $14,
+            anticipation_score = $15, impact_score = $16, efficiency_score = $17,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = $18
+        `, [
+          data.title, data.creator, data.creatorBio, data.creatorAvatar, data.tagline,
+          data.description, data.problems, data.category, data.imageUrl, data.goal,
+          data.pledged, data.backers, data.city, data.country,
+          data.anticipationScore, data.impactScore, data.efficiencyScore, id
+        ]);
+
+        // Update media items - delete old and insert new
+        if (data.media !== undefined) {
+          await client.query('DELETE FROM media_items WHERE project_id = $1', [id]);
+          if (Array.isArray(data.media)) {
+            for (let i = 0; i < data.media.length; i++) {
+              const mediaItem = data.media[i];
+              await client.query(`
+                INSERT INTO media_items (project_id, type, url, position)
+                VALUES ($1, $2, $3, $4)
+              `, [id, mediaItem.type, mediaItem.url, i]);
+            }
+          }
+        }
+
+        // Update rewards
+        if (data.rewards !== undefined) {
+          await client.query('DELETE FROM rewards WHERE project_id = $1', [id]);
+          if (Array.isArray(data.rewards)) {
+            for (let i = 0; i < data.rewards.length; i++) {
+              const reward = data.rewards[i];
+              await client.query(`
+                INSERT INTO rewards (project_id, title, pledge_amount, description, is_founders_pass, position)
+                VALUES ($1, $2, $3, $4, $5, $6)
+              `, [id, reward.title, reward.pledgeAmount, reward.description, reward.isFoundersPass || false, i]);
+            }
+          }
+        }
+
+        // Update FAQs
+        if (data.faq !== undefined) {
+          await client.query('DELETE FROM faqs WHERE project_id = $1', [id]);
+          if (Array.isArray(data.faq)) {
+            for (let i = 0; i < data.faq.length; i++) {
+              const faq = data.faq[i];
+              await client.query(`
+                INSERT INTO faqs (project_id, question, answer, position)
+                VALUES ($1, $2, $3, $4)
+              `, [id, faq.question, faq.answer, i]);
+            }
+          }
+        }
+
+        // Update team members
+        if (data.team !== undefined) {
+          await client.query('DELETE FROM team_members WHERE project_id = $1', [id]);
+          if (Array.isArray(data.team)) {
+            for (let i = 0; i < data.team.length; i++) {
+              const member = data.team[i];
+              await client.query(`
+                INSERT INTO team_members (project_id, name, role, avatar, position)
+                VALUES ($1, $2, $3, $4, $5)
+              `, [id, member.name, member.role, member.avatar, i]);
+            }
+          }
+        }
+
+        // Update social links
+        if (data.socialLinks !== undefined) {
+          await client.query('DELETE FROM social_links WHERE project_id = $1', [id]);
+          if (Array.isArray(data.socialLinks)) {
+            for (const link of data.socialLinks) {
+              await client.query(`
+                INSERT INTO social_links (project_id, platform, url)
+                VALUES ($1, $2, $3)
+              `, [id, link.platform, link.url]);
+            }
+          }
+        }
+
+        await client.query('COMMIT');
+
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ message: 'Project updated successfully' })
+        };
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
     }
 
     // DELETE /api/projects/:id - Delete project

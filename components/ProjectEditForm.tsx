@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Save, Plus, Trash2 } from 'lucide-react';
-import type { Project } from '../types';
+import type { Project, MediaItem } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+import MediaUploader from './MediaUploader';
+import ImageUploadField from './ImageUploadField';
 
 interface ProjectEditFormProps {
   project: Project | null;
@@ -36,6 +38,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
   const [faqs, setFaqs] = useState<any[]>([]);
   const [team, setTeam] = useState<any[]>([]);
   const [socialLinks, setSocialLinks] = useState<any[]>([]);
+  const [media, setMedia] = useState<MediaItem[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -63,6 +66,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
       setFaqs(project.faq || []);
       setTeam(project.team || []);
       setSocialLinks(project.socialLinks || []);
+      setMedia(project.media || []);
     }
   }, [project]);
 
@@ -78,6 +82,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
         faq: faqs,
         team,
         socialLinks,
+        media,
       });
       onClose();
     } catch (error) {
@@ -126,7 +131,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
                     required
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                     placeholder="Enter project title"
                   />
                 </div>
@@ -139,7 +144,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
                     required
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                   >
                     {categories.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
@@ -156,20 +161,16 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
                     required
                     value={formData.creator}
                     onChange={(e) => setFormData({ ...formData, creator: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                     placeholder="Creator name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('admin.form.creatorAvatar')}
-                  </label>
-                  <input
-                    type="url"
+                  <ImageUploadField
+                    label={t('admin.form.creatorAvatar')}
                     value={formData.creatorAvatar}
-                    onChange={(e) => setFormData({ ...formData, creatorAvatar: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    onChange={(url) => setFormData({ ...formData, creatorAvatar: url })}
                     placeholder="https://..."
                   />
                 </div>
@@ -184,7 +185,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
                   type="text"
                   value={formData.tagline}
                   onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                   placeholder="Short description"
                 />
               </div>
@@ -199,7 +200,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
                   rows={4}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                   placeholder="Detailed project description"
                 />
               </div>
@@ -213,7 +214,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
                   rows={2}
                   value={formData.creatorBio}
                   onChange={(e) => setFormData({ ...formData, creatorBio: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                   placeholder="About the creator"
                 />
               </div>
@@ -221,15 +222,11 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
               {/* Image & Funding */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('admin.form.imageUrl')} *
-                  </label>
-                  <input
-                    type="url"
-                    required
+                  <ImageUploadField
+                    label={t('admin.form.imageUrl')}
                     value={formData.imageUrl}
-                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    onChange={(url) => setFormData({ ...formData, imageUrl: url })}
+                    required
                     placeholder="https://..."
                   />
                 </div>
@@ -244,7 +241,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
                     min="0"
                     value={formData.goal}
                     onChange={(e) => setFormData({ ...formData, goal: parseFloat(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                   />
                 </div>
 
@@ -257,7 +254,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
                     min="0"
                     value={formData.pledged}
                     onChange={(e) => setFormData({ ...formData, pledged: parseFloat(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                   />
                 </div>
 
@@ -270,7 +267,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
                     min="0"
                     value={formData.backers}
                     onChange={(e) => setFormData({ ...formData, backers: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                   />
                 </div>
               </div>
@@ -285,7 +282,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
                     type="text"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                     placeholder="City name"
                   />
                 </div>
@@ -299,7 +296,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
                     maxLength={2}
                     value={formData.country}
                     onChange={(e) => setFormData({ ...formData, country: e.target.value.toUpperCase() })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                     placeholder="US, KZ, etc"
                   />
                 </div>
@@ -317,7 +314,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
                     max="100"
                     value={formData.anticipationScore}
                     onChange={(e) => setFormData({ ...formData, anticipationScore: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                   />
                 </div>
 
@@ -331,7 +328,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
                     max="100"
                     value={formData.impactScore}
                     onChange={(e) => setFormData({ ...formData, impactScore: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                   />
                 </div>
 
@@ -345,9 +342,14 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
                     max="100"
                     value={formData.efficiencyScore}
                     onChange={(e) => setFormData({ ...formData, efficiencyScore: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                   />
                 </div>
+              </div>
+
+              {/* Media Gallery */}
+              <div className="border-t pt-6">
+                <MediaUploader media={media} onChange={setMedia} />
               </div>
             </div>
           </div>
@@ -357,7 +359,7 @@ export default function ProjectEditForm({ project, onSave, onClose }: ProjectEdi
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-900"
               disabled={saving}
             >
               {t('admin.form.cancel')}

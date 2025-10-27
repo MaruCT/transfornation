@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@google/genai": "^1.19.0",
+    "busboy": "^1.6.0",
+    "cloudinary": "^2.8.0",
     "framer-motion": "^11.3.12",
     "lucide-react": "^0.417.0",
     "pg": "^8.16.3",
