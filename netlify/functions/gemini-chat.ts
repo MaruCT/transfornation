@@ -36,13 +36,20 @@ export const handler: Handler = async (event) => {
       return { statusCode: 400, body: 'Invalid messages' };
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const geminiModel = genAI.getGenerativeModel({ model });
-
-    const history = messages.map(m => ({
+    const systemInstruction = messages.find(m => m.role === 'system')?.content || '';
+    const history = messages.filter(m => m.role !== 'system').map(m => ({
       role: m.role,
       parts: [{ text: m.content }],
     }));
+
+    // Ensure history starts with a user message
+    const firstUserIndex = history.findIndex(m => m.role === 'user');
+    if (firstUserIndex > 0) {
+        history.splice(0, firstUserIndex);
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const geminiModel = genAI.getGenerativeModel({ model, systemInstruction });
     const lastMessage = history.pop();
 
     if (!lastMessage) {
