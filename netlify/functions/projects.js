@@ -37,27 +37,34 @@ export const handler = async (event, context) => {
         SELECT
           p.*,
           COALESCE(
-            json_agg(
-              jsonb_build_object(
+            json_agg(DISTINCT jsonb_build_object(
                 'type', m.type,
                 'url', m.url
-              ) ORDER BY m.position
+              ) ORDER BY jsonb_build_object(
+                'type', m.type,
+                'url', m.url
+              )
             ) FILTER (WHERE m.id IS NOT NULL),
             '[]'
           ) as media,
           COALESCE(
-            json_agg(
-              jsonb_build_object(
+            json_agg(DISTINCT jsonb_build_object(
                 'name', tm.name,
                 'role', tm.role,
                 'avatar', tm.avatar
-              ) ORDER BY tm.position
+              ) ORDER BY jsonb_build_object(
+                'name', tm.name,
+                'role', tm.role,
+                'avatar', tm.avatar
+              )
             ) FILTER (WHERE tm.id IS NOT NULL),
             '[]'
           ) as team,
           COALESCE(
-            json_agg(
-              jsonb_build_object(
+            json_agg(DISTINCT jsonb_build_object(
+                'platform', sl.platform,
+                'url', sl.url
+              ) ORDER BY jsonb_build_object(
                 'platform', sl.platform,
                 'url', sl.url
               )
@@ -65,28 +72,49 @@ export const handler = async (event, context) => {
             '[]'
           ) as "socialLinks",
           COALESCE(
-            json_agg(
-              jsonb_build_object(
+            json_agg(DISTINCT jsonb_build_object(
                 'title', r.title,
                 'pledgeAmount', r.pledge_amount,
                 'description', r.description,
                 'isFoundersPass', r.is_founders_pass
-              ) ORDER BY r.position
+              ) ORDER BY jsonb_build_object(
+                'title', r.title,
+                'pledgeAmount', r.pledge_amount,
+                'description', r.description,
+                'isFoundersPass', r.is_founders_pass
+              )
             ) FILTER (WHERE r.id IS NOT NULL),
             '[]'
           ) as rewards,
           COALESCE(
-            json_agg(
-              jsonb_build_object(
+            json_agg(DISTINCT jsonb_build_object(
                 'question', f.question,
                 'answer', f.answer
-              ) ORDER BY f.position
+              ) ORDER BY jsonb_build_object(
+                'question', f.question,
+                'answer', f.answer
+              )
             ) FILTER (WHERE f.id IS NOT NULL),
             '[]'
           ) as faq,
           COALESCE(
-            json_agg(
-              jsonb_build_object(
+            json_agg(DISTINCT jsonb_build_object(
+                'milestone', rs.milestone,
+                'description', rs.description,
+                'status', rs.status
+              ) ORDER BY jsonb_build_object(
+                'milestone', rs.milestone,
+                'description', rs.description,
+                'status', rs.status
+              )
+            ) FILTER (WHERE rs.id IS NOT NULL),
+            '[]'
+          ) as roadmap,
+          COALESCE(
+            json_agg(DISTINCT jsonb_build_object(
+                'title', d.title,
+                'url', d.url
+              ) ORDER BY jsonb_build_object(
                 'title', d.title,
                 'url', d.url
               )
@@ -99,6 +127,7 @@ export const handler = async (event, context) => {
         LEFT JOIN social_links sl ON p.id = sl.project_id
         LEFT JOIN rewards r ON p.id = r.project_id
         LEFT JOIN faqs f ON p.id = f.project_id
+        LEFT JOIN roadmap_steps rs ON p.id = rs.project_id
         LEFT JOIN documents d ON p.id = d.project_id
       `;
 
@@ -149,6 +178,7 @@ export const handler = async (event, context) => {
         fundingVelocity: project.funding_velocity,
         faq: project.faq,
         rewards: project.rewards,
+        roadmap: project.roadmap,
         city: project.city,
         country: project.country,
         anticipationScore: project.anticipation_score,
@@ -160,7 +190,6 @@ export const handler = async (event, context) => {
           sentiment: 'Positive',
           summary: 'The community is excited about this project and its potential impact.'
         },
-        roadmap: [],
         backersList: [],
         favoritedBy: []
       }));
@@ -180,27 +209,38 @@ export const handler = async (event, context) => {
         SELECT
           p.*,
           COALESCE(
-            json_agg(
-              jsonb_build_object(
+            json_agg(DISTINCT jsonb_build_object(
                 'type', m.type,
-                'url', m.url
-              ) ORDER BY m.position
+                'url', m.url,
+                'position', m.position
+              ) ORDER BY jsonb_build_object(
+                'type', m.type,
+                'url', m.url,
+                'position', m.position
+              )
             ) FILTER (WHERE m.id IS NOT NULL),
             '[]'
           ) as media,
           COALESCE(
-            json_agg(
-              jsonb_build_object(
+            json_agg(DISTINCT jsonb_build_object(
                 'name', tm.name,
                 'role', tm.role,
-                'avatar', tm.avatar
-              ) ORDER BY tm.position
+                'avatar', tm.avatar,
+                'position', tm.position
+              ) ORDER BY jsonb_build_object(
+                'name', tm.name,
+                'role', tm.role,
+                'avatar', tm.avatar,
+                'position', tm.position
+              )
             ) FILTER (WHERE tm.id IS NOT NULL),
             '[]'
           ) as team,
           COALESCE(
-            json_agg(
-              jsonb_build_object(
+            json_agg(DISTINCT jsonb_build_object(
+                'platform', sl.platform,
+                'url', sl.url
+              ) ORDER BY jsonb_build_object(
                 'platform', sl.platform,
                 'url', sl.url
               )
@@ -208,28 +248,55 @@ export const handler = async (event, context) => {
             '[]'
           ) as "socialLinks",
           COALESCE(
-            json_agg(
-              jsonb_build_object(
+            json_agg(DISTINCT jsonb_build_object(
                 'title', r.title,
                 'pledgeAmount', r.pledge_amount,
                 'description', r.description,
-                'isFoundersPass', r.is_founders_pass
-              ) ORDER BY r.position
+                'isFoundersPass', r.is_founders_pass,
+                'position', r.position
+              ) ORDER BY jsonb_build_object(
+                'title', r.title,
+                'pledgeAmount', r.pledge_amount,
+                'description', r.description,
+                'isFoundersPass', r.is_founders_pass,
+                'position', r.position
+              )
             ) FILTER (WHERE r.id IS NOT NULL),
             '[]'
           ) as rewards,
           COALESCE(
-            json_agg(
-              jsonb_build_object(
+            json_agg(DISTINCT jsonb_build_object(
                 'question', f.question,
-                'answer', f.answer
-              ) ORDER BY f.position
+                'answer', f.answer,
+                'position', f.position
+              ) ORDER BY jsonb_build_object(
+                'question', f.question,
+                'answer', f.answer,
+                'position', f.position
+              )
             ) FILTER (WHERE f.id IS NOT NULL),
             '[]'
           ) as faq,
           COALESCE(
-            json_agg(
-              jsonb_build_object(
+            json_agg(DISTINCT jsonb_build_object(
+                'milestone', rs.milestone,
+                'description', rs.description,
+                'status', rs.status,
+                'position', rs.position
+              ) ORDER BY jsonb_build_object(
+                'milestone', rs.milestone,
+                'description', rs.description,
+                'status', rs.status,
+                'position', rs.position
+              )
+            ) FILTER (WHERE rs.id IS NOT NULL),
+            '[]'
+          ) as roadmap,
+          COALESCE(
+            json_agg(DISTINCT jsonb_build_object(
+                'title', d.title,
+                'url', d.url
+              ) ORDER BY jsonb_build_object(
                 'title', d.title,
                 'url', d.url
               )
@@ -237,14 +304,19 @@ export const handler = async (event, context) => {
             '[]'
           ) as documents,
           COALESCE(
-            json_agg(
-              jsonb_build_object(
+            json_agg(DISTINCT jsonb_build_object(
                 'author', c.author,
                 'avatar', c.avatar,
                 'text', c.text,
                 'date', c.created_at,
                 'type', c.type
-              ) ORDER BY c.created_at DESC
+              ) ORDER BY jsonb_build_object(
+                'author', c.author,
+                'avatar', c.avatar,
+                'text', c.text,
+                'date', c.created_at,
+                'type', c.type
+              )
             ) FILTER (WHERE c.id IS NOT NULL),
             '[]'
           ) as comments
@@ -254,6 +326,7 @@ export const handler = async (event, context) => {
         LEFT JOIN social_links sl ON p.id = sl.project_id
         LEFT JOIN rewards r ON p.id = r.project_id
         LEFT JOIN faqs f ON p.id = f.project_id
+        LEFT JOIN roadmap_steps rs ON p.id = rs.project_id
         LEFT JOIN documents d ON p.id = d.project_id
         LEFT JOIN comments c ON p.id = c.project_id
         WHERE p.id = $1 OR p.slug = $1
@@ -296,6 +369,7 @@ export const handler = async (event, context) => {
         fundingVelocity: project.funding_velocity,
         faq: project.faq,
         rewards: project.rewards,
+        roadmap: project.roadmap,
         comments: project.comments,
         city: project.city,
         country: project.country,
@@ -307,7 +381,6 @@ export const handler = async (event, context) => {
           sentiment: 'Positive',
           summary: 'The community is excited about this project and its potential impact.'
         },
-        roadmap: [],
         backersList: [],
         favoritedBy: []
       };
@@ -351,6 +424,71 @@ export const handler = async (event, context) => {
           data.city, data.country, data.anticipationScore || 75, data.impactScore || 75, data.efficiencyScore || 75
         ]);
 
+        // Insert media items
+        if (data.media && Array.isArray(data.media)) {
+          for (let i = 0; i < data.media.length; i++) {
+            const mediaItem = data.media[i];
+            await client.query(`
+              INSERT INTO media_items (project_id, type, url, position)
+              VALUES ($1, $2, $3, $4)
+            `, [projectId, mediaItem.type, mediaItem.url, i]);
+          }
+        }
+
+        // Insert rewards
+        if (data.rewards && Array.isArray(data.rewards)) {
+          for (let i = 0; i < data.rewards.length; i++) {
+            const reward = data.rewards[i];
+            await client.query(`
+              INSERT INTO rewards (project_id, title, pledge_amount, description, is_founders_pass, position)
+              VALUES ($1, $2, $3, $4, $5, $6)
+            `, [projectId, reward.title, reward.pledgeAmount, reward.description, reward.isFoundersPass || false, i]);
+          }
+        }
+
+        // Insert FAQs
+        if (data.faq && Array.isArray(data.faq)) {
+          for (let i = 0; i < data.faq.length; i++) {
+            const faq = data.faq[i];
+            await client.query(`
+              INSERT INTO faqs (project_id, question, answer, position)
+              VALUES ($1, $2, $3, $4)
+            `, [projectId, faq.question, faq.answer, i]);
+          }
+        }
+
+        // Insert team members
+        if (data.team && Array.isArray(data.team)) {
+          for (let i = 0; i < data.team.length; i++) {
+            const member = data.team[i];
+            await client.query(`
+              INSERT INTO team_members (project_id, name, role, avatar, position)
+              VALUES ($1, $2, $3, $4, $5)
+            `, [projectId, member.name, member.role, member.avatar, i]);
+          }
+        }
+
+        // Insert social links
+        if (data.socialLinks && Array.isArray(data.socialLinks)) {
+          for (const link of data.socialLinks) {
+            await client.query(`
+              INSERT INTO social_links (project_id, platform, url)
+              VALUES ($1, $2, $3)
+            `, [projectId, link.platform, link.url]);
+          }
+        }
+
+        // Insert roadmap steps
+        if (data.roadmap && Array.isArray(data.roadmap)) {
+          for (let i = 0; i < data.roadmap.length; i++) {
+            const step = data.roadmap[i];
+            await client.query(`
+              INSERT INTO roadmap_steps (project_id, milestone, description, status, position)
+              VALUES ($1, $2, $3, $4, $5)
+            `, [projectId, step.milestone, step.description, step.status, i]);
+          }
+        }
+
         await client.query('COMMIT');
 
         return {
@@ -370,27 +508,123 @@ export const handler = async (event, context) => {
     if (httpMethod === 'PUT' && path.includes('/projects/')) {
       const id = path.split('/projects/')[1];
       const data = JSON.parse(event.body);
+      const client = await pool.connect();
 
-      await pool.query(`
-        UPDATE projects SET
-          title = $1, creator = $2, creator_bio = $3, creator_avatar = $4, tagline = $5,
-          description = $6, problems = $7, category = $8, image_url = $9, goal = $10,
-          pledged = $11, backers_count = $12, city = $13, country = $14,
-          anticipation_score = $15, impact_score = $16, efficiency_score = $17,
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = $18
-      `, [
-        data.title, data.creator, data.creatorBio, data.creatorAvatar, data.tagline,
-        data.description, data.problems, data.category, data.imageUrl, data.goal,
-        data.pledged, data.backers, data.city, data.country,
-        data.anticipationScore, data.impactScore, data.efficiencyScore, id
-      ]);
+      try {
+        await client.query('BEGIN');
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ message: 'Project updated successfully' })
-      };
+        // Update project
+        await client.query(`
+          UPDATE projects SET
+            title = $1, creator = $2, creator_bio = $3, creator_avatar = $4, tagline = $5,
+            description = $6, problems = $7, category = $8, image_url = $9, goal = $10,
+            pledged = $11, backers_count = $12, city = $13, country = $14,
+            anticipation_score = $15, impact_score = $16, efficiency_score = $17,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = $18
+        `, [
+          data.title, data.creator, data.creatorBio, data.creatorAvatar, data.tagline,
+          data.description, data.problems, data.category, data.imageUrl, data.goal,
+          data.pledged, data.backers, data.city, data.country,
+          data.anticipationScore, data.impactScore, data.efficiencyScore, id
+        ]);
+
+        // Update media items - delete old and insert new
+        if (data.media !== undefined) {
+          await client.query('DELETE FROM media_items WHERE project_id = $1', [id]);
+          if (Array.isArray(data.media)) {
+            for (let i = 0; i < data.media.length; i++) {
+              const mediaItem = data.media[i];
+              await client.query(`
+                INSERT INTO media_items (project_id, type, url, position)
+                VALUES ($1, $2, $3, $4)
+              `, [id, mediaItem.type, mediaItem.url, i]);
+            }
+          }
+        }
+
+        // Update rewards
+        if (data.rewards !== undefined) {
+          await client.query('DELETE FROM rewards WHERE project_id = $1', [id]);
+          if (Array.isArray(data.rewards)) {
+            for (let i = 0; i < data.rewards.length; i++) {
+              const reward = data.rewards[i];
+              await client.query(`
+                INSERT INTO rewards (project_id, title, pledge_amount, description, is_founders_pass, position)
+                VALUES ($1, $2, $3, $4, $5, $6)
+              `, [id, reward.title, reward.pledgeAmount, reward.description, reward.isFoundersPass || false, i]);
+            }
+          }
+        }
+
+        // Update FAQs
+        if (data.faq !== undefined) {
+          await client.query('DELETE FROM faqs WHERE project_id = $1', [id]);
+          if (Array.isArray(data.faq)) {
+            for (let i = 0; i < data.faq.length; i++) {
+              const faq = data.faq[i];
+              await client.query(`
+                INSERT INTO faqs (project_id, question, answer, position)
+                VALUES ($1, $2, $3, $4)
+              `, [id, faq.question, faq.answer, i]);
+            }
+          }
+        }
+
+        // Update team members
+        if (data.team !== undefined) {
+          await client.query('DELETE FROM team_members WHERE project_id = $1', [id]);
+          if (Array.isArray(data.team)) {
+            for (let i = 0; i < data.team.length; i++) {
+              const member = data.team[i];
+              await client.query(`
+                INSERT INTO team_members (project_id, name, role, avatar, position)
+                VALUES ($1, $2, $3, $4, $5)
+              `, [id, member.name, member.role, member.avatar, i]);
+            }
+          }
+        }
+
+        // Update social links
+        if (data.socialLinks !== undefined) {
+          await client.query('DELETE FROM social_links WHERE project_id = $1', [id]);
+          if (Array.isArray(data.socialLinks)) {
+            for (const link of data.socialLinks) {
+              await client.query(`
+                INSERT INTO social_links (project_id, platform, url)
+                VALUES ($1, $2, $3)
+              `, [id, link.platform, link.url]);
+            }
+          }
+        }
+
+        // Update roadmap steps
+        if (data.roadmap !== undefined) {
+          await client.query('DELETE FROM roadmap_steps WHERE project_id = $1', [id]);
+          if (Array.isArray(data.roadmap)) {
+            for (let i = 0; i < data.roadmap.length; i++) {
+              const step = data.roadmap[i];
+              await client.query(`
+                INSERT INTO roadmap_steps (project_id, milestone, description, status, position)
+                VALUES ($1, $2, $3, $4, $5)
+              `, [id, step.milestone, step.description, step.status, i]);
+            }
+          }
+        }
+
+        await client.query('COMMIT');
+
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ message: 'Project updated successfully' })
+        };
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
     }
 
     // DELETE /api/projects/:id - Delete project

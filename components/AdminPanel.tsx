@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Lock } from 'lucide-react';
 import type { Project } from '../types';
 import { loadProjectsFromAPI } from '../services/apiService';
 import ProjectEditForm from './ProjectEditForm';
@@ -10,8 +10,13 @@ interface AdminPanelProps {
   onBack: () => void;
 }
 
+const ADMIN_PASSWORD = 'admin123'; // В продакшене использовать хеш и серверную проверку
+
 export default function AdminPanel({ onBack }: AdminPanelProps) {
   const { t } = useLanguage();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -99,6 +104,75 @@ export default function AdminPanel({ onBack }: AdminPanelProps) {
     setEditingProject(null);
     setShowEditModal(true);
   };
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      setAuthError('');
+      setPassword('');
+    } else {
+      setAuthError('Неверный пароль');
+      setPassword('');
+    }
+  };
+
+  // Если не аутентифицирован, показываем форму входа
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-blue-900 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md"
+        >
+          <div className="flex flex-col items-center mb-8">
+            <div className="bg-purple-100 p-4 rounded-full mb-4">
+              <Lock className="w-12 h-12 text-purple-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Panel</h1>
+            <p className="text-gray-600 text-center">Введите пароль для доступа к админке</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Пароль
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                placeholder="Введите пароль"
+                required
+                autoFocus
+              />
+              {authError && (
+                <p className="mt-2 text-sm text-red-600">{authError}</p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors font-medium"
+            >
+              Войти
+            </button>
+
+            <button
+              type="button"
+              onClick={onBack}
+              className="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            >
+              Назад
+            </button>
+          </form>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
