@@ -154,7 +154,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ messages, onSendMessage, isLoading, o
                                     <div className={`max-w-[80%] rounded-xl px-4 py-2 ${msg.role === 'user' ? 'bg-[#0057FF] text-white' : 'bg-[#001641]/80 text-gray-200'}`}>
                                        <div className="text-sm whitespace-pre-wrap">
                                         {formatMessageText(msg.text)}
-                                        {msg.role === 'model' && isLoading && messages[messages.length-1].id === msg.id && <span className="animate-pulse">...</span>}
+                                        {msg.role === 'model' && isLoading && msg.text.length === 0 && <span className="animate-pulse">...</span>}
                                        </div>
                                        {msg.project && (
                                             isFullScreen ? 

@@ -16,8 +16,7 @@ import ContestView from './components/ContestView';
 import LandingPage from './components/LandingPage';
 import EventDetail from './components/EventDetail';
 import AdminPanel from './components/AdminPanel';
-import { generateProjectImage, summarizeComments, generateFoundersPassImage, generateProjectScores } from './services/geminiService';
-import { chatWithOpenAI } from './services/openaiService';
+import { generateProjectImage, summarizeComments, generateFoundersPassImage, generateProjectScores, streamChatResponse } from './services/geminiService';
 import { mockBlogPosts, mockEvents } from './services/mockData';
 import { loadProjectsFromAPI } from './services/apiService';
 import Confetti from './components/Confetti';
@@ -432,35 +431,37 @@ const AppContent: React.FC = () => {
 
    const handleSendMessage = async (message: string) => {
         if (isChatLoading) return;
-        
+
         setIsChatLoading(true);
         const userMessage: ChatMessage = { id: Date.now().toString(), role: 'user', text: message };
         const newMessages = [...chatMessages, userMessage];
         setChatMessages(newMessages);
-        
+
         const aiMessagePlaceholderId = (Date.now() + 1).toString();
         const aiMessagePlaceholder: ChatMessage = { id: aiMessagePlaceholderId, role: 'model', text: '' };
         setChatMessages(prev => [...prev, aiMessagePlaceholder]);
 
         try {
             const systemPrompt = getSystemPrompt(projects);
-            // OpenAI expects 'user', 'assistant', and 'system' roles.
-            // Our internal state uses 'user' and 'model'. We map 'model' to 'assistant' for the service.
-            const history = newMessages.map(m => ({ role: m.role === 'model' ? 'assistant' : m.role, content: m.text }));
+            const history = newMessages.map(m => ({ role: m.role, content: m.text }));
             const messagesToApi = [{ role: 'system', content: systemPrompt }, ...history];
-            
-            const responseText = await chatWithOpenAI(messagesToApi as any);
+
+            let fullResponse = '';
+            for await (const chunk of streamChatResponse(messagesToApi as any)) {
+                fullResponse += chunk;
+                setChatMessages(prev => prev.map(msg =>
+                    msg.id === aiMessagePlaceholderId ? { ...msg, text: fullResponse } : msg
+                ));
+            }
 
             let projectFound: Project | undefined = undefined;
-            
-            // Check for project reference in response
-            const projectTagMatch = responseText.match(/\[PROJECT:([^\]]+)\]/);
+            const projectTagMatch = fullResponse.match(/\[PROJECT:([^\]]+)\]/);
             if (projectTagMatch) {
                 const projectId = projectTagMatch[1];
                 projectFound = projects.find(p => p.id === projectId);
             }
 
-            const displayText = responseText.replace(/\[PROJECT:([^\]]+)\]\s*/, '');
+            const displayText = fullResponse.replace(/\[PROJECT:([^\]]+)\]\s*/, '');
 
             setChatMessages(prev => prev.map(msg => {
                 if (msg.id === aiMessagePlaceholderId) {
@@ -472,9 +473,10 @@ const AppContent: React.FC = () => {
                 }
                 return msg;
             }));
+
         } catch (error) {
             console.error("Error sending message to AI:", error);
-            setChatMessages(prev => prev.map(msg => 
+            setChatMessages(prev => prev.map(msg =>
                 msg.id === aiMessagePlaceholderId ? { ...msg, text: "Sorry, I encountered an error. Please try again." } : msg
             ));
         } finally {
