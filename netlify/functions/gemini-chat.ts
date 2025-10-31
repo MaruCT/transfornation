@@ -22,12 +22,14 @@ export const handler: Handler = async (event) => {
   if (!apiKey) return { statusCode: 500, body: 'Missing GEMINI_API_KEY' };
 
   try {
+    console.log('Received event:', JSON.stringify(event, null, 2));
     const payload = JSON.parse(event.body || '{}') as {
       messages: { role: 'user' | 'model'; content: string }[];
       model?: string;
       temperature?: number;
       stream?: boolean;
     };
+    console.log('Parsed payload:', payload);
     const { messages, model = 'gemini-1.5-flash', temperature = 0.3, stream = false } = payload;
 
     if (!messages || !Array.isArray(messages)) {
@@ -100,6 +102,7 @@ export const handler: Handler = async (event) => {
       };
     }
   } catch (e: any) {
+    console.error('Error in gemini-chat function:', e);
     return { statusCode: 500, body: e?.message || 'Internal Error' };
   }
 };

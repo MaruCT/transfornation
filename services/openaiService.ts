@@ -1,7 +1,7 @@
 export type ChatMessageOpenAI = { role: 'system' | 'user' | 'assistant'; content: string };
 
 export async function chatWithOpenAI(messages: ChatMessageOpenAI[], model: string = 'gpt-4o-mini') {
-  const res = await fetch('/.netlify/functions/chat', {
+  const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages, model }),

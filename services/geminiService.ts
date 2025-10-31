@@ -205,7 +205,7 @@ export const analyzeCampaignReadiness = async (projectData: any): Promise<Analys
 };
 
 export async function* streamChatResponse(messages: ChatMessage[]): AsyncGenerator<string> {
-    const res = await fetch('/.netlify/functions/gemini-chat', {
+    const res = await fetch('/api/gemini-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages, stream: true }),
