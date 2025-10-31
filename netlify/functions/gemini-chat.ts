@@ -30,7 +30,7 @@ export const handler: Handler = async (event) => {
       stream?: boolean;
     };
     console.log('Parsed payload:', payload);
-    const { messages, model = 'gemini-1.5-flash', temperature = 0.3, stream = false } = payload;
+    const { messages, model = 'gemini-pro', temperature = 0.3, stream = false } = payload;
 
     if (!messages || !Array.isArray(messages)) {
       return { statusCode: 400, body: 'Invalid messages' };
