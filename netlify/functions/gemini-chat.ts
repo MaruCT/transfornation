@@ -36,41 +36,16 @@ export const handler: Handler = async (event) => {
       return { statusCode: 400, body: 'Invalid messages' };
     }
 
-    const systemInstruction = messages.find(m => m.role === 'system')?.content || '';
-    const history = messages.filter(m => m.role !== 'system').map(m => ({
-      role: m.role,
-      parts: [{ text: m.content }],
-    }));
-
-    // Ensure history starts with a user message
-    const firstUserIndex = history.findIndex(m => m.role === 'user');
-    if (firstUserIndex > 0) {
-        history.splice(0, firstUserIndex);
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage || lastMessage.role !== 'user') {
+      return { statusCode: 400, body: 'Invalid last message' };
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const geminiModel = genAI.getGenerativeModel({ model, systemInstruction });
-    const lastMessage = history.pop();
-
-    if (!lastMessage) {
-      return { statusCode: 400, body: 'Invalid messages' };
-    }
-
-    const chat = geminiModel.startChat({
-      history,
-      generationConfig: {
-        temperature,
-      },
-      safetySettings: [
-        {
-          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-          threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-        },
-      ],
-    });
+    const geminiModel = genAI.getGenerativeModel({ model });
 
     if (stream) {
-      const streamResult = await chat.sendMessageStream(lastMessage.parts);
+      const streamResult = await geminiModel.generateContentStream(lastMessage.content);
 
       const encoder = new TextEncoder();
       const readable = new ReadableStream({
@@ -90,12 +65,12 @@ export const handler: Handler = async (event) => {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
           'Connection': 'keep-alive',
-          'Access-Control-Allow-Origin': '*', 
+          'Access-Control-Allow-Origin': '*',
         },
         body: readable,
       };
     } else {
-      const result = await chat.sendMessage(lastMessage.parts);
+      const result = await geminiModel.generateContent(lastMessage.content);
       const response = result.response;
       const text = response.text();
 
@@ -103,7 +78,7 @@ export const handler: Handler = async (event) => {
         statusCode: 200,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*', 
+          'Access-Control-Allow-Origin': '*',
         },
         body: JSON.stringify({ content: text }),
       };
