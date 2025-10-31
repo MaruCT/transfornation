@@ -36,16 +36,51 @@ export const handler: Handler = async (event) => {
       return { statusCode: 400, body: 'Invalid messages' };
     }
 
-    const lastMessage = messages[messages.length - 1];
-    if (!lastMessage || lastMessage.role !== 'user') {
-      return { statusCode: 400, body: 'Invalid last message' };
+    const systemInstruction = messages.find(m => m.role === 'system')?.content || '';
+    let history = messages.filter(m => m.role !== 'system').map(m => ({
+      role: m.role,
+      parts: [{ text: m.content }],
+    }));
+
+    // Ensure history starts with a user message
+    const firstUserIndex = history.findIndex(m => m.role === 'user');
+    if (firstUserIndex > 0) {
+        history.splice(0, firstUserIndex);
     }
 
+    // Ensure roles are alternating
+    history = history.reduce((acc, curr, i) => {
+        if (i > 0 && curr.role === acc[acc.length - 1].role) {
+            acc[acc.length - 1].parts[0].text += '\n' + curr.parts[0].text;
+        } else {
+            acc.push(curr);
+        }
+        return acc;
+    }, []);
+
     const genAI = new GoogleGenerativeAI(apiKey);
-    const geminiModel = genAI.getGenerativeModel({ model });
+    const geminiModel = genAI.getGenerativeModel({ model, systemInstruction });
+    const lastMessage = history.pop();
+
+    if (!lastMessage) {
+      return { statusCode: 400, body: 'Invalid messages' };
+    }
+
+    const chat = geminiModel.startChat({
+      history,
+      generationConfig: {
+        temperature,
+      },
+      safetySettings: [
+        {
+          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+          threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+        },
+      ],
+    });
 
     if (stream) {
-      const streamResult = await geminiModel.generateContentStream(lastMessage.content);
+      const streamResult = await chat.sendMessageStream(lastMessage.parts);
 
       const encoder = new TextEncoder();
       const readable = new ReadableStream({
@@ -70,7 +105,7 @@ export const handler: Handler = async (event) => {
         body: readable,
       };
     } else {
-      const result = await geminiModel.generateContent(lastMessage.content);
+      const result = await chat.sendMessage(lastMessage.parts);
       const response = result.response;
       const text = response.text();
 

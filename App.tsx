@@ -441,7 +441,9 @@ const AppContent: React.FC = () => {
         setChatMessages(prev => [...prev, aiMessagePlaceholder]);
 
         try {
-            const messagesToApi = [userMessage];
+            const systemPrompt = getSystemPrompt(projects);
+            const history = newMessages.map(m => ({ role: m.role, content: m.text }));
+            const messagesToApi = [{ role: 'system', content: systemPrompt }, ...history];
 
             let fullResponse = '';
             for await (const chunk of streamChatResponse(messagesToApi as any)) {
@@ -450,6 +452,26 @@ const AppContent: React.FC = () => {
                     msg.id === aiMessagePlaceholderId ? { ...msg, text: fullResponse } : msg
                 ));
             }
+
+            let projectFound: Project | undefined = undefined;
+            const projectTagMatch = fullResponse.match(/\[PROJECT:([^\]]+)\]/);
+            if (projectTagMatch) {
+                const projectId = projectTagMatch[1];
+                projectFound = projects.find(p => p.id === projectId);
+            }
+
+            const displayText = fullResponse.replace(/\[PROJECT:([^\]]+)\]\s*/, '');
+
+            setChatMessages(prev => prev.map(msg => {
+                if (msg.id === aiMessagePlaceholderId) {
+                    const updatedMsg: ChatMessage = { ...msg, text: displayText };
+                    if (projectFound) {
+                        updatedMsg.project = projectFound;
+                    }
+                    return updatedMsg;
+                }
+                return msg;
+            }));
 
         } catch (error) {
             console.error("Error sending message to AI:", error);
